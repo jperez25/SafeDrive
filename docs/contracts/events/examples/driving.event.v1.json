@@ -1,0 +1,13 @@
+{
+  "eventId": "7b0f3c1e-5d0a-4a52-9e7e-3a5f2c9d1a01",
+  "type": "driving.event",
+  "version": 1,
+  "occurredAt": "2026-11-18T12:00:00Z",
+  "producedAt": "2026-11-18T12:00:01Z",
+  "correlationId": "corr-example-1",
+  "source": "trip-processor",
+  "payload": {
+    "tripId": "t-1", "driverId": "d-1", "kind": "hard_brake", "severity": "medium",
+    "ts": "2026-11-18T11:45:10Z", "lat": 41.88, "lon": -87.63
+  }
+}

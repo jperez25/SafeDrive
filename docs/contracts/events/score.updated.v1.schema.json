@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.safedrive.local/events/score.updated.v1.schema.json",
+  "title": "score.updated v1",
+  "allOf": [ { "$ref": "envelope.v1.schema.json" } ],
+  "properties": {
+    "type": { "const": "score.updated" },
+    "version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["driverId", "scoreVersion", "score", "basedOnTrips", "computedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "driverId": { "type": "string", "minLength": 1 },
+        "scoreVersion": { "type": "integer", "minimum": 1 },
+        "score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "basedOnTrips": { "type": "integer", "minimum": 0 },
+        "computedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "unevaluatedProperties": false
+}

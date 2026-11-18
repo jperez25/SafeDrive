@@ -1,0 +1,13 @@
+{
+  "eventId": "7b0f3c1e-5d0a-4a52-9e7e-3a5f2c9d1a01",
+  "type": "score.updated",
+  "version": 1,
+  "occurredAt": "2026-11-18T12:00:00Z",
+  "producedAt": "2026-11-18T12:00:01Z",
+  "correlationId": "corr-example-1",
+  "source": "scoring",
+  "payload": {
+    "driverId": "d-1", "scoreVersion": 3, "score": 82.5, "basedOnTrips": 12,
+    "computedAt": "2026-11-18T12:00:00Z"
+  }
+}

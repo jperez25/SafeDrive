@@ -1,0 +1,15 @@
+{
+  "eventId": "7b0f3c1e-5d0a-4a52-9e7e-3a5f2c9d1a01",
+  "type": "trip.completed",
+  "version": 1,
+  "occurredAt": "2026-11-18T12:00:00Z",
+  "producedAt": "2026-11-18T12:00:01Z",
+  "correlationId": "corr-example-1",
+  "source": "trip-processor",
+  "payload": {
+    "tripId": "t-1", "driverId": "d-1", "revision": 1,
+    "startedAt": "2026-11-18T11:30:00Z", "endedAt": "2026-11-18T11:59:00Z",
+    "distanceKm": 18.2, "durationS": 1740, "avgSpeedKmh": 37.7, "maxSpeedKmh": 82.0,
+    "eventCounts": { "hard_brake": 1, "speeding": 0 }
+  }
+}

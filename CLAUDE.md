@@ -15,9 +15,9 @@ Java 25, Spring Boot 4.x, Maven multi-module, Kafka, Postgres, minikube,
 TestNG, REST Assured, Allure, Pact. Root package: `com.qnt.safedrive`.
 
 ## Commands (placeholders)
-- Build: `mvn clean install`
-- Unit tests: `mvn test`
-- Integration tests: `mvn -pl integration-tests test -Dsuite=smoke`
+- Build: `./mvnw clean install` (Maven wrapper, no system Maven needed)
+- Unit tests: `./mvnw test`
+- Integration tests: `./mvnw -pl integration-tests test -Dsuite=smoke` (module not created yet)
 - Deploy: `platform/scripts/deploy.sh all|<service>|infra`, plus `down` and `status`
 
 ## Rules

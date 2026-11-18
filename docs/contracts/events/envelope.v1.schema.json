@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.safedrive.local/events/envelope.v1.schema.json",
+  "title": "Event envelope v1",
+  "description": "Wraps every event on every topic. See docs/architecture/event-catalog.md.",
+  "type": "object",
+  "required": ["eventId", "type", "version", "occurredAt", "producedAt", "correlationId", "source", "payload"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid" },
+    "type": { "type": "string", "minLength": 1 },
+    "version": { "type": "integer", "minimum": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "producedAt": { "type": "string", "format": "date-time" },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "source": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object" }
+  }
+}

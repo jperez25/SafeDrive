@@ -1,7 +1,7 @@
 # SafeDrive: Event catalog
 
 > Status: DRAFT. Format: JSON Schema (Avro is the fallback if we need a performance upgrade).
-> Schemas will live in `docs/contracts/events/`.
+> Schemas live in `docs/contracts/events/` (`<type>.v1.schema.json`, plus `envelope.v1.schema.json` and `examples/`).
 
 ## Envelope (in `commons`)
 
@@ -10,8 +10,8 @@ Every event, on every topic, is wrapped in the same envelope.
 | Field | Type | Notes |
 |---|---|---|
 | `eventId` | UUID | Unique per event. Consumers dedupe on it. |
-| `eventType` | string | e.g. `trip.raw` |
-| `schemaVersion` | int | Bumped on any contract change. |
+| `type` | string | e.g. `trip.raw` |
+| `version` | int | Schema version, bumped on any breaking contract change. |
 | `occurredAt` | ISO-8601 UTC | When it happened in the real world. |
 | `producedAt` | ISO-8601 UTC | When the service published it. |
 | `correlationId` | string | Created at the edge, never changed. |

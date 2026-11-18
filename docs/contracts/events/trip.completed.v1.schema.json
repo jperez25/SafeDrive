@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.safedrive.local/events/trip.completed.v1.schema.json",
+  "title": "trip.completed v1",
+  "allOf": [ { "$ref": "envelope.v1.schema.json" } ],
+  "properties": {
+    "type": { "const": "trip.completed" },
+    "version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["tripId", "driverId", "revision", "startedAt", "endedAt", "distanceKm", "durationS", "avgSpeedKmh", "maxSpeedKmh", "eventCounts"],
+      "additionalProperties": false,
+      "properties": {
+        "tripId": { "type": "string", "minLength": 1 },
+        "driverId": { "type": "string", "minLength": 1 },
+        "revision": { "type": "integer", "minimum": 1 },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" },
+        "distanceKm": { "type": "number", "minimum": 0 },
+        "durationS": { "type": "integer", "minimum": 0 },
+        "avgSpeedKmh": { "type": "number", "minimum": 0 },
+        "maxSpeedKmh": { "type": "number", "minimum": 0 },
+        "eventCounts": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  },
+  "unevaluatedProperties": false
+}

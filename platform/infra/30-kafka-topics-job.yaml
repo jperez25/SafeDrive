@@ -1,0 +1,36 @@
+# Creates the topics from docs/architecture/event-catalog.md (idempotent).
+# Dead-letter topics are named <topic>.<consumer-group>.dlt, consumer group = service name.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-topics
+  namespace: safedrive
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-topics
+          image: apache/kafka:4.2.2
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              BOOTSTRAP=kafka:9092
+              TOPICS=(
+                trip.raw
+                trip.completed
+                driving.event
+                score.updated
+                premium.adjusted
+                trip.raw.trip-processor.dlt
+                trip.completed.scoring.dlt
+                driving.event.scoring.dlt
+                score.updated.policy-rating.dlt
+              )
+              for t in "${TOPICS[@]}"; do
+                /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$BOOTSTRAP" \
+                  --create --if-not-exists --topic "$t" --partitions 3 --replication-factor 1
+              done
+              /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$BOOTSTRAP" --list

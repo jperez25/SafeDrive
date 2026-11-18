@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.safedrive.local/events/premium.adjusted.v1.schema.json",
+  "title": "premium.adjusted v1",
+  "allOf": [ { "$ref": "envelope.v1.schema.json" } ],
+  "properties": {
+    "type": { "const": "premium.adjusted" },
+    "version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["driverId", "scoreVersion", "basePremium", "adjustmentPct", "newPremium", "band"],
+      "additionalProperties": false,
+      "properties": {
+        "driverId": { "type": "string", "minLength": 1 },
+        "scoreVersion": { "type": "integer", "minimum": 1 },
+        "basePremium": { "type": "number", "minimum": 0 },
+        "adjustmentPct": { "type": "number" },
+        "newPremium": { "type": "number", "minimum": 0 },
+        "band": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "unevaluatedProperties": false
+}

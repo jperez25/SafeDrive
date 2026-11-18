@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.safedrive.local/events/trip.raw.v1.schema.json",
+  "title": "trip.raw v1",
+  "allOf": [ { "$ref": "envelope.v1.schema.json" } ],
+  "properties": {
+    "type": { "const": "trip.raw" },
+    "version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["batchId", "tripId", "driverId", "deviceId", "batchSeq", "last", "samples"],
+      "additionalProperties": false,
+      "properties": {
+        "batchId": { "type": "string", "minLength": 1 },
+        "tripId": { "type": "string", "minLength": 1 },
+        "driverId": { "type": "string", "minLength": 1 },
+        "deviceId": { "type": "string", "minLength": 1 },
+        "batchSeq": { "type": "integer", "minimum": 0 },
+        "last": { "type": "boolean" },
+        "samples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["ts", "lat", "lon", "speedKmh", "accelMs2", "heading", "phoneInUse"],
+            "additionalProperties": false,
+            "properties": {
+              "ts": { "type": "string", "format": "date-time" },
+              "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+              "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+              "speedKmh": { "type": "number", "minimum": 0 },
+              "accelMs2": { "type": "number" },
+              "heading": { "type": "number", "minimum": 0, "maximum": 360 },
+              "phoneInUse": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "unevaluatedProperties": false
+}

@@ -1,0 +1,16 @@
+{
+  "eventId": "7b0f3c1e-5d0a-4a52-9e7e-3a5f2c9d1a01",
+  "type": "trip.raw",
+  "version": 1,
+  "occurredAt": "2026-11-18T12:00:00Z",
+  "producedAt": "2026-11-18T12:00:01Z",
+  "correlationId": "corr-example-1",
+  "source": "telemetry-ingest",
+  "payload": {
+    "batchId": "b-1", "tripId": "t-1", "driverId": "d-1", "deviceId": "dev-1",
+    "batchSeq": 0, "last": true,
+    "samples": [
+      { "ts": "2026-11-18T11:59:00Z", "lat": 41.88, "lon": -87.63, "speedKmh": 42.5, "accelMs2": 0.4, "heading": 90, "phoneInUse": false }
+    ]
+  }
+}
