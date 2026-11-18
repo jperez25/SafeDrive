@@ -1,0 +1,14 @@
+package com.qnt.safedrive.telemetryingest;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
+
+@SpringBootApplication
+@EnableScheduling
+public class TelemetryIngestApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(TelemetryIngestApplication.class, args);
+    }
+}

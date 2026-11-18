@@ -71,11 +71,22 @@ deploy_infra() {
 
 has_manifest() { [[ -d "$SERVICES_DIR/$1" ]] && compgen -G "$SERVICES_DIR/$1/*.yaml" >/dev/null; }
 
+# Builds the jar and the image straight into minikube's image store (no registry).
+build_image() {
+  local svc="$1"
+  [[ -f "$ROOT/services/$svc/Dockerfile" ]] || return 0
+  log "$svc: build image"
+  (cd "$ROOT" && ./mvnw -q -pl "services/$svc" -am package -DskipTests)
+  minikube image build -t "safedrive/$svc:dev" -f "$ROOT/services/$svc/Dockerfile" "$ROOT"
+}
+
 deploy_service() {
   local svc="$1"
   has_manifest "$svc" || die "no manifest for '$svc' in platform/services/$svc (service not implemented yet)"
   log "$svc"
+  build_image "$svc"
   kubectl apply -f "$SERVICES_DIR/$svc"
+  kubectl -n "$NS" rollout restart "deployment/$svc" >/dev/null
   kubectl -n "$NS" rollout status "deployment/$svc" --timeout="$TIMEOUT"
 }
 

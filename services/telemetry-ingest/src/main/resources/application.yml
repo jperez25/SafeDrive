@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: telemetry-ingest
+  datasource:
+    url: ${INGEST_DB_URL:jdbc:postgresql://localhost:5432/safedrive}
+    username: ${INGEST_DB_USER:ingest}
+    password: ${INGEST_DB_PASSWORD}
+  flyway:
+    schemas: ingest
+    default-schema: ingest
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+
+# One JSON log line per event; MDC (including correlationId) is part of every line.
+logging:
+  structured:
+    format:
+      console: logstash
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+
+server:
+  port: ${PORT:8080}

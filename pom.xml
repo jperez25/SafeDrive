@@ -12,6 +12,7 @@
 
   <modules>
     <module>commons</module>
+    <module>services/telemetry-ingest</module>
   </modules>
 
   <properties>

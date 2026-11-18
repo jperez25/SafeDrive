@@ -1,0 +1,25 @@
+# SafeDrive: Status
+
+Last updated: 2026-11-18. Phases are defined in `plan.md` section 8.
+
+| # | Phase | Status | Summary |
+|---|---|---|---|
+| 1 | Foundations | Done | Maven wrapper and parent pom (Java 25, Spring Boot 4.1.2, Jackson 3 enforced). `commons` with event envelope, correlation ID and env config. JSON Schema contracts for the envelope and 5 events, with examples and 23 contract tests. Infra on minikube (Colima): Postgres (schema and user per service), single-node KRaft Kafka, 9 topics, `deploy.sh`. Verified on a real cluster. |
+| 2 | Vertical slice | In progress | 2.1 `telemetry-ingest`: done and verified on minikube (202/200/400/409, 10 concurrent duplicates give one publish, outbox relay to `trip.raw`, JSON logs with correlation ID, 18 unit tests). 2.2 `trip-processor`: not started. Black-box tests wait for the `integration-tests` module. |
+| 3 | Scoring and rating | Not started | `scoring` and `policy-rating`, plus the e2e flow. |
+| 4 | Failure-mode tests | Not started | Duplicates, out-of-order, late data, outages, dead-letter and replay. |
+| 5 | Observability, load, CI | Not started | Prometheus, Grafana, kafka-exporter, load tests, GitHub Actions. |
+| 6 | Phase 2 services | Not started | `rewards` and `claims` (not designed in detail yet). |
+
+## Other work
+
+| Area | Status | Notes |
+|---|---|---|
+| Design docs | Done | `plan.md` (approved), `architecture/services.md`, `event-catalog.md`, `platform.md`. |
+| Test platform | Drafted, parked | `architecture/test-platform.md`. Implementation waits until the app side is done. |
+| `simulator` | Not started | Needed for the failure-mode tests. |
+| `integration-tests` | Not started | Directory skeleton only. Layout: `core`, one module per service, `e2e`. |
+
+## Open items
+
+- Which module owns the mocked notification provider for `rewards` (phase 6).
