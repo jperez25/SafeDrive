@@ -82,6 +82,11 @@ public final class TestEnvironment {
         return Path.of(text("contractsDir", "../../docs/contracts/events"));
     }
 
+    /** Directory with the platform scripts such as {@code replay-dlt.sh} (relative to the module that runs the tests). */
+    public Path scriptsDir() {
+        return Path.of(text("scriptsDir", "../../platform/scripts"));
+    }
+
     public Map<String, String> services() {
         return Json.MAPPER.convertValue(json.path("services"), Json.MAPPER.constructType(Map.class));
     }

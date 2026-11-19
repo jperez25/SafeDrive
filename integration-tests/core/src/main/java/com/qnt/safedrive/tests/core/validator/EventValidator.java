@@ -3,6 +3,7 @@ package com.qnt.safedrive.tests.core.validator;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.qnt.safedrive.tests.core.model.Batch;
+import com.qnt.safedrive.tests.core.model.DrivingEvent;
 import com.qnt.safedrive.tests.core.model.Envelope;
 import com.qnt.safedrive.tests.core.model.TripCompleted;
 import com.qnt.safedrive.tests.core.utils.Json;
@@ -44,6 +45,10 @@ public class EventValidator {
 
     public TripCompletedPayloadValidator tripCompletedPayload() {
         return new TripCompletedPayloadValidator(Json.convert(actual.payload(), TripCompleted.class));
+    }
+
+    public DrivingEventPayloadValidator drivingEventPayload() {
+        return new DrivingEventPayloadValidator(Json.convert(actual.payload(), DrivingEvent.class));
     }
 
     public TripRawPayloadValidator tripRawPayload() {

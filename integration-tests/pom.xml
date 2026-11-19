@@ -18,6 +18,7 @@
   <modules>
     <module>core</module>
     <module>telemetry-ingest</module>
+    <module>trip-processor</module>
   </modules>
 
   <properties>

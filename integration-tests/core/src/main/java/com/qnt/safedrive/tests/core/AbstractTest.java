@@ -2,8 +2,10 @@ package com.qnt.safedrive.tests.core;
 
 import com.qnt.safedrive.tests.core.client.HealthClient;
 import com.qnt.safedrive.tests.core.model.constants.Services;
+import com.qnt.safedrive.tests.core.client.KafkaPublisher;
 import com.qnt.safedrive.tests.core.client.TelemetryIngestClient;
 import com.qnt.safedrive.tests.core.trace.CorrelationTracer;
+import com.qnt.safedrive.tests.core.trace.DeadLetterReplayer;
 import com.qnt.safedrive.tests.core.utils.Waiter;
 import com.qnt.safedrive.tests.core.utils.TestEnvironment;
 import java.util.ArrayList;
@@ -25,6 +27,15 @@ public abstract class AbstractTest {
 
     protected TelemetryIngestClient ingestClient() {
         return new TelemetryIngestClient(env.serviceUrl(Services.TELEMETRY_INGEST));
+    }
+
+    /** Publishes straight to a topic, for input the ingest API would refuse (poison events, repeated event IDs). */
+    protected KafkaPublisher publisher() {
+        return new KafkaPublisher(env);
+    }
+
+    protected DeadLetterReplayer replayer() {
+        return new DeadLetterReplayer(env);
     }
 
     protected HealthClient healthClient(String service) {

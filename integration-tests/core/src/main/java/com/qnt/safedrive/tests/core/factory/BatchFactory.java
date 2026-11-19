@@ -21,6 +21,8 @@ public final class BatchFactory {
     private static final double MEDIUM_BRAKE_ACCELERATION = -5.5;   // m/s2, medium band is -5.0 to -7.0
     private static final double HARD_BRAKE_ACCELERATION = -8.0;     // m/s2, high band is at or below -7.0
     private static final double SPEEDING_SPEED = 150.0;             // km/h, medium band is 140 to 160
+    private static final double HARSH_ACCELERATION = 5.0;           // m/s2, medium band is 4.5 to 6.0
+    private static final double DISTRACTED_SPEED = 60.0;            // km/h with the phone in use, medium band is 50 to 100
     private static final double CRASH_ACCELERATION = -35.0;         // m/s2, about 3.5 g, far beyond any braking
     private static final int EVENT_INDEX = 2;
 
@@ -67,6 +69,19 @@ public final class BatchFactory {
     /** A cruise batch with one speeding event. */
     public static Batch aSpeedingBatch() {
         return withEvent(aBatch(), SPEEDING_SPEED, 0.0);
+    }
+
+    /** A cruise batch with one medium-severity harsh acceleration. */
+    public static Batch aHarshAccelerationBatch() {
+        return withEvent(aBatch(), 50.0, HARSH_ACCELERATION);
+    }
+
+    /** A cruise batch where the driver uses the phone while driving fast enough to count as distraction (medium). */
+    public static Batch aDistractedBatch() {
+        Batch batch = aBatch();
+        List<Sample> samples = new ArrayList<>(batch.samples());
+        samples.set(EVENT_INDEX, samples.get(EVENT_INDEX).withSpeedKilometersPerHour(DISTRACTED_SPEED).withPhoneInUse(true));
+        return batch.withSamples(samples);
     }
 
     /** A cruise batch ending in a sudden stop: speed to zero with a crash-level deceleration. */

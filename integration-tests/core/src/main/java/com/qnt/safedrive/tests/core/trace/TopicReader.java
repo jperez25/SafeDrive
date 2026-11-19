@@ -25,6 +25,9 @@ public class TopicReader {
     /** A message as it sits on the topic. */
     public record Message(String topic, String key, Envelope envelope) {}
 
+    /** A message exactly as it sits on a topic, value untouched: for dead letters, which may not be envelopes. */
+    public record RawMessage(String topic, String key, String value) {}
+
     private static final Duration POLL = Duration.ofMillis(200);
     private static final Duration READ_TIMEOUT = Duration.ofSeconds(15);
     private static final Duration API_TIMEOUT = Duration.ofSeconds(10);
@@ -37,6 +40,23 @@ public class TopicReader {
 
     /** Every message on the topic at the moment of the call. */
     public List<Message> read(String topic) {
+        List<Message> messages = new ArrayList<>();
+        consume(topic, record -> toMessage(topic, record, messages));
+        return messages;
+    }
+
+    /** Messages on the topic with this key, value untouched (even when it is not a valid envelope). */
+    public List<RawMessage> readRawByKey(String topic, String key) {
+        List<RawMessage> messages = new ArrayList<>();
+        consume(topic, record -> {
+            if (key.equals(record.key())) {
+                messages.add(new RawMessage(topic, record.key(), record.value()));
+            }
+        });
+        return messages;
+    }
+
+    private void consume(String topic, java.util.function.Consumer<ConsumerRecord<String, String>> handler) {
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties())) {
             List<TopicPartition> partitions = consumer.partitionsFor(topic).stream()
                     .map(info -> new TopicPartition(topic, info.partition()))
@@ -45,17 +65,13 @@ public class TopicReader {
             consumer.seekToBeginning(partitions);
             Map<TopicPartition, Long> end = consumer.endOffsets(partitions);
 
-            List<Message> messages = new ArrayList<>();
             long deadline = System.nanoTime() + READ_TIMEOUT.toNanos();
             while (!caughtUp(consumer, end)) {
                 if (System.nanoTime() > deadline) {
                     throw new IllegalStateException("could not read all of topic " + topic + " in " + READ_TIMEOUT);
                 }
-                for (ConsumerRecord<String, String> record : consumer.poll(POLL)) {
-                    toMessage(topic, record, messages);
-                }
+                consumer.poll(POLL).forEach(handler);
             }
-            return messages;
         }
     }
 

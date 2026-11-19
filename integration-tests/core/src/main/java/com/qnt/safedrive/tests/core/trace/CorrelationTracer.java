@@ -58,4 +58,14 @@ public class CorrelationTracer {
                     return found.isEmpty() ? Optional.empty() : Optional.of(found);
                 });
     }
+
+    /** Waits until at least {@code count} messages with this key are on the topic (dead letters, which may not be envelopes). */
+    public List<TopicReader.RawMessage> awaitRawByKey(String topic, String key, int count) {
+        return waiter.until(
+                count + " message(s) on " + topic + " with key " + key,
+                () -> {
+                    List<TopicReader.RawMessage> found = topics.readRawByKey(topic, key);
+                    return found.size() >= count ? Optional.of(found) : Optional.empty();
+                });
+    }
 }

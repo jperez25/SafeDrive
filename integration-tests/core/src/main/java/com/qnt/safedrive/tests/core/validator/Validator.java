@@ -18,4 +18,8 @@ public final class Validator {
     public static MessageValidator with(TopicReader.Message message) {
         return new MessageValidator(message);
     }
+
+    public static RawMessageValidator with(TopicReader.RawMessage message) {
+        return new RawMessageValidator(message);
+    }
 }

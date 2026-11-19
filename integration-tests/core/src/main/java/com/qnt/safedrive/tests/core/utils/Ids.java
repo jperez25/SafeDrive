@@ -14,6 +14,11 @@ public final class Ids {
         return next("it");
     }
 
+    /** An event ID: a bare UUID, because the envelope contract requires that format. */
+    public static String event() {
+        return UUID.randomUUID().toString();
+    }
+
     public static String batch() {
         return next("b");
     }
