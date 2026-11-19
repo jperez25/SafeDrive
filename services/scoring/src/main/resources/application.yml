@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: scoring
+  datasource:
+    url: ${SCORING_DB_URL:jdbc:postgresql://localhost:5432/safedrive}
+    username: ${SCORING_DB_USER:scoring}
+    password: ${SCORING_DB_PASSWORD}
+  flyway:
+    schemas: scoring
+    default-schema: scoring
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: scoring
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+
+safedrive:
+  scoring:
+    # The driver score is the mean of the trip scores of the last N trips.
+    window-trips: ${SCORING_WINDOW_TRIPS:10}
+  outbox:
+    poll-ms: ${OUTBOX_POLL_MS:500}
+
+logging:
+  structured:
+    format:
+      console: logstash
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+
+server:
+  port: ${PORT:8080}

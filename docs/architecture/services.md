@@ -81,7 +81,12 @@ Consumes `trip.completed` and `driving.event`, produces a driver risk score.
 
 **Design**
 - DB: `trip_scores(trip_id PK, revision)`, `driver_scores(driver_id PK, score_version)`, `processed_events`, `outbox`.
-- Score is a rolling aggregate over the last N trips (formula kept simple and documented).
+- Consumes `trip.completed` only. `driving.event` is not consumed: the trip summary already carries `eventCounts`, and a new revision replaces them with the trip.
+- Score is a rolling aggregate over the last N trips (N = 10, `SCORING_WINDOW_TRIPS`):
+  - penalty = sum(weight x count) per 100 km, distance floored at 1 km. Weights: `hard_brake` 2, `harsh_accel` 2, `speeding` 3, `distraction` 4, `crash` 25; unknown kinds count 0.
+  - trip score = max(0, 100 - penalty); driver score = mean of the last N trip scores (by `endedAt`); both rounded to 2 decimals.
+- `score.updated` is published on every recompute, even when the value is unchanged; `scoreVersion` goes up by 1 each time.
+- A trip event with a revision not newer than the stored one is ignored (no recompute, no event).
 - A trip revision replaces the previous one, then the score is recomputed.
 - API: `GET /v1/drivers/{driverId}/score`.
 - `score.updated` carries a monotonic `scoreVersion`.

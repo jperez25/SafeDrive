@@ -14,6 +14,7 @@
     <module>commons</module>
     <module>services/telemetry-ingest</module>
     <module>services/trip-processor</module>
+    <module>services/scoring</module>
     <module>integration-tests</module>
   </modules>
 
