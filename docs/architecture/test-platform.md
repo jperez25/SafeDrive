@@ -65,6 +65,23 @@ integration-tests/telemetry-ingest/src/test/java/.../batch/
   BatchIngestNegativeTest
 ```
 
+## Scoring tests (`integration-tests/scoring`)
+
+Tests put `trip.completed` events straight on the topic (keyed by driver, built by `TripCompletedFactory`), so each
+test controls the trip summary and therefore the expected score. They read `score.updated` from the topic and the
+score from `GET /v1/drivers/{driverId}/score`. One driver per test keeps them parallel-safe.
+
+| Feature | Covers |
+|---|---|
+| Health | liveness and readiness (smoke) |
+| Score calculation | weights per 100 km, distance floor, zero floor, mean, rolling window of 10, `scoreVersion` +1 per trip, unknown kinds |
+| Trip revisions | newer revision replaces the trip; older or repeated revision ignored, no gap in `scoreVersion` |
+| Idempotency | duplicate event ID, late duplicate, same trip under a new event ID |
+| Score API | 200 and 404 bodies, latest score matches `score.updated`, correlation ID header |
+| Dead letter and replay | unreadable, wrong type or version, invalid payloads, partition not blocked, replay with `replay-dlt.sh` |
+
+Run: `./mvnw -pl integration-tests/scoring -am test -Dsuite=master -Denv=local` (`-am` builds `core` first).
+
 ## Failure-mode matrix
 
 | Scenario | Where it bites | What the test checks |

@@ -11,5 +11,8 @@ public final class Statuses {
     public static final String INGEST_CONFLICT = "conflict";
     public static final String INGEST_INVALID = "invalid";
 
+    /** The {@code status} field of the score API when the driver has no score yet. */
+    public static final String SCORE_NOT_FOUND = "not_found";
+
     public static final String HEALTH_UP = "UP";
 }

@@ -3,6 +3,7 @@ package com.qnt.safedrive.tests.core.validator;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.qnt.safedrive.tests.core.model.IngestResponse;
+import com.qnt.safedrive.tests.core.model.ScoreResponse;
 import com.qnt.safedrive.tests.core.model.constants.Http;
 import com.qnt.safedrive.tests.core.utils.Json;
 import io.restassured.response.Response;
@@ -48,6 +49,11 @@ public class ResponseValidator {
 
     public IngestBodyValidator ingestBody() {
         return new IngestBodyValidator(parse(IngestResponse.class));
+    }
+
+    /** The score API body: the score, or the not-found answer for a driver without one. */
+    public ScoreBodyValidator scoreBody() {
+        return new ScoreBodyValidator(parse(ScoreResponse.class));
     }
 
     <B> B parse(Class<B> type) {
