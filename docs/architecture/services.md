@@ -25,6 +25,10 @@ Owns a small Postgres schema: it is **not** stateless, because duplicate and rac
 - Per-sample checks (lat/lon range, speed and acceleration bounds, timestamp not in the future or too old):
   invalid samples are dropped and reported back as `rejectedSamples`; the rest are forwarded.
 - Timestamps ordered within the batch.
+- Limits (inclusive): at most 5000 samples per batch; `lat` -90..90, `lon` -180..180, `speedKmh` 0..300,
+  `accelMs2` -50..50, `heading` 0..360; `ts` an ISO-8601 UTC instant at most 5 minutes in the future and 7 days old.
+  A sample with a missing field or a value outside these limits is dropped and reported; a batch with no valid
+  sample, or with out-of-order timestamps among the valid ones, is rejected with `400`.
 
 **Dedup and races**
 - Table `ingested_batches(batch_id PK, trip_id, driver_id, payload_hash, status, received_at)`.

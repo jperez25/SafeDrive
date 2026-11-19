@@ -5,8 +5,14 @@
 ## Modules
 
 - `integration-tests/core`: reusable pieces for every service: models, REST Assured clients,
-  factories (`withX`), validators with child validators, constants, `AbstractTest`, and a waiter
+  factories, fluent validators (master with child validators), constants, `AbstractTest`, and a waiter
   (poll with timeout) for eventual consistency.
+  Packages under `com.qnt.safedrive.tests.core`: `client`, `factory`, `listener`, `model`
+  (with `model.constants`: `Services`, `Topics`, `EventTypes`, `Http`, `Paths`, `Statuses`, `Groups`), `trace`, `utils` (`Json`, `TestEnvironment`, `Waiter`), `validator`.
+  Models are Lombok records with `@With` and `@Builder(toBuilder = true)`, and use full-word field names
+  (`timestamp`, not `ts`); where a contract uses a short wire name the field maps it with `@JsonProperty`.
+  Factories return the model itself, so a test changes one field with `withX`:
+  `aBatch().withTripId(null)`. Rules: `.claude/rules/testing.md`.
 - `integration-tests/<service>`: black-box tests, one module per service, organized by feature.
 - `integration-tests/e2e`: the full flow from ingest to premium. Special module, not tied to one service.
 - `simulator`: generates trips for N drivers and injects faults (duplicate, out-of-order, late,
@@ -28,10 +34,17 @@ own driver and trip IDs, and best-effort cleanup runs after it. Jackson 3 only (
 integration-tests/<service>/src/test/resources/
   environment.<env>.json   one file per environment (e.g. local, ci)
   suites/
-    master.xml             calls smoke.xml and regression.xml
-    smoke.xml              fast checks that the service is up and its main path works
-    regression.xml         the full set of positive and negative feature classes
+    master.xml             calls smoke.xml then regression.xml; SmokeGateListener gates regression
+    smoke.xml              group "smoke": fast checks that the service is up and its main path works
+    regression.xml         group "regression": the full set of positive and negative tests
 ```
+
+Suites select by package (`com.qnt.safedrive.tests.<service>.*`) and by TestNG group, so adding a test class
+needs no suite edit. Each test is in exactly one group (`Groups` in `core`); health tests are always `smoke`.
+`master` registers `SmokeGateListener` (in `core`): once any smoke test does not pass, every regression test is
+skipped with the reason "smoke failed first", so a broken environment fails fast. Health tests are smoke only
+and have no negative class: they only answer "is the service up".
+Services, Postgres and Kafka are reached on localhost through `platform/scripts/port-forward.sh`.
 
 The environment is picked with `-Denv=<env>`; the suite with `-Dsuite=<name>`. Environment files hold
 no secrets (those come from env vars). `e2e` follows the same layout.

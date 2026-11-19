@@ -8,7 +8,7 @@
 platform/
   infra/      Kafka (single-node KRaft) and Postgres manifests
   services/   one deploy manifest per service
-  scripts/    deploy.sh, replay-dlt.sh
+  scripts/    deploy.sh, replay-dlt.sh, port-forward.sh
 ```
 
 ## Infra
@@ -31,6 +31,15 @@ platform/
 - Order: Postgres and Kafka, then topics and schemas, then services. Each step waits for readiness
   (`kubectl rollout status`) before the next starts.
 - `status` prints pod readiness and the health of each service.
+
+## port-forward.sh
+
+- Forwards `telemetry-ingest` (8081), `trip-processor` (8082), `scoring` (8083), `policy-rating` (8084),
+  Postgres (5432) and Kafka (9094) to localhost; runs in the foreground, Ctrl-C stops all. Services that are
+  not deployed are skipped. Override ports with `INGEST_PORT`, `TRIP_PORT`, `SCORING_PORT`, `RATING_PORT`,
+  `POSTGRES_PORT`. The Kafka port is fixed at 9094.
+- Kafka has two client listeners: `PLAINTEXT` (9092, in-cluster, used by the services) and `EXTERNAL`, advertised as
+  `localhost:9094` and reached through the forward, so the tests use a Kafka client directly on the host.
 
 ## Later
 

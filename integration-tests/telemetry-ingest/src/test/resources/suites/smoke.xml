@@ -1,0 +1,13 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="telemetry-ingest smoke" parallel="classes" thread-count="4">
+  <test name="telemetry-ingest smoke">
+    <groups>
+      <run>
+        <include name="smoke"/>
+      </run>
+    </groups>
+    <packages>
+      <package name="com.qnt.safedrive.tests.telemetryingest.*"/>
+    </packages>
+  </test>
+</suite>

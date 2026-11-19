@@ -79,8 +79,8 @@ SafeDrive/
   (base URLs, topics, timeouts per environment) and a `suites/` dir.
 - **Suites:** each service has `master.xml`, `regression.xml` and `smoke.xml`. `master.xml` calls the other two.
 - Run by module and suite, e.g. `-pl integration-tests/<module> -Dsuite=smoke -Denv=<env>`.
-- Follow the QuickMoney conventions: TestNG, REST Assured, Allure, `AbstractTest`, validators with
-  child validators, factories with `withX`, constants, atomic and parallel-safe tests,
+- Follow the QuickMoney conventions: TestNG, REST Assured, Allure, `AbstractTest`, fluent validators (master
+  with child validators), factories with `withX`, constants, atomic and parallel-safe tests,
   best-effort cleanup.
 - Failure-mode coverage: duplicates, out-of-order, late data, service down mid-pipeline,
   dead-letter queue, replay, eventual consistency.

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.qnt.safedrive</groupId>
+    <artifactId>integration-tests</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>integration-tests-telemetry-ingest</artifactId>
+  <name>SafeDrive integration tests: telemetry-ingest</name>
+
+  <properties>
+    <!-- smoke | regression | master; environment file: environment.${env}.json -->
+    <suite>master</suite>
+    <env>local</env>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.qnt.safedrive</groupId>
+      <artifactId>integration-tests-core</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <suiteXmlFiles>
+            <suiteXmlFile>src/test/resources/suites/${suite}.xml</suiteXmlFile>
+          </suiteXmlFiles>
+          <systemPropertyVariables>
+            <env>${env}</env>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

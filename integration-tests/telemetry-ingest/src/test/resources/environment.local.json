@@ -1,0 +1,14 @@
+{
+  "name": "local",
+  "services": {
+    "telemetry-ingest": "http://localhost:8081",
+    "trip-processor": "http://localhost:8082",
+    "scoring": "http://localhost:8083",
+    "policy-rating": "http://localhost:8084"
+  },
+  "namespace": "safedrive",
+  "kafkaBootstrapServers": "localhost:9094",
+  "waitTimeoutSeconds": 30,
+  "pollMillis": 500,
+  "contractsDir": "../../docs/contracts/events"
+}
