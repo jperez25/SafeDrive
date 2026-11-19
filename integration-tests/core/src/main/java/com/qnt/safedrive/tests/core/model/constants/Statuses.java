@@ -14,5 +14,8 @@ public final class Statuses {
     /** The {@code status} field of the score API when the driver has no score yet. */
     public static final String SCORE_NOT_FOUND = "not_found";
 
+    /** The {@code status} field of the premium API when no score was applied for the driver yet. */
+    public static final String PREMIUM_NOT_FOUND = "not_found";
+
     public static final String HEALTH_UP = "UP";
 }

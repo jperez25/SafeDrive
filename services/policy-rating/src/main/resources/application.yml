@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: policy-rating
+  datasource:
+    url: ${RATING_DB_URL:jdbc:postgresql://localhost:5432/safedrive}
+    username: ${RATING_DB_USER:rating}
+    password: ${RATING_DB_PASSWORD}
+  flyway:
+    schemas: rating
+    default-schema: rating
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: policy-rating
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+
+safedrive:
+  rating:
+    # Premium of a driver seen for the first time (no policy service exists, so the policy is created on demand).
+    default-base-premium: ${RATING_DEFAULT_BASE_PREMIUM:120.00}
+  outbox:
+    poll-ms: ${OUTBOX_POLL_MS:500}
+
+logging:
+  structured:
+    format:
+      console: logstash
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+
+server:
+  port: ${PORT:8080}

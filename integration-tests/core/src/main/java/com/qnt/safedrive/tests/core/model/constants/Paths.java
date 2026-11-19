@@ -10,6 +10,10 @@ public final class Paths {
         return "/v1/drivers/" + driverId + "/score";
     }
 
+    public static String driverPremium(String driverId) {
+        return "/v1/drivers/" + driverId + "/premium";
+    }
+
     public static final String HEALTH = "/actuator/health";
     public static final String HEALTH_LIVENESS = "/actuator/health/liveness";
     public static final String HEALTH_READINESS = "/actuator/health/readiness";

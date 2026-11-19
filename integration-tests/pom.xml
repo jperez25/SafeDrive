@@ -20,6 +20,7 @@
     <module>telemetry-ingest</module>
     <module>trip-processor</module>
     <module>scoring</module>
+    <module>policy-rating</module>
   </modules>
 
   <properties>

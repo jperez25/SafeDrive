@@ -103,9 +103,22 @@ Consumes `score.updated`, adjusts the premium.
 
 **Design**
 - DB: `policies`, `premium_adjustments(driver_id, score_version)` unique, `processed_events`, `outbox`.
-- Score bands map to a discount or surcharge percentage.
-- Stale scores (lower `scoreVersion` than already applied) are ignored.
-- API: `GET /v1/drivers/{driverId}/premium`.
+- One policy per driver, created on the first score with a base premium of 120.00 (`RATING_DEFAULT_BASE_PREMIUM`; no policy service exists).
+- Score bands (lower bound inclusive) map to an adjustment of the base premium, rounded to cents:
+
+  | Score | Band | Adjustment |
+  |---|---|---|
+  | >= 90 | `excellent` | -20% |
+  | >= 75 | `good` | -10% |
+  | >= 60 | `average` | 0% |
+  | >= 40 | `poor` | +15% |
+  | < 40 | `high_risk` | +30% |
+
+- The adjustment is always applied to the base premium, never compounded on the previous premium.
+- Stale scores (`scoreVersion` not higher than the one already applied) are ignored: no change, no event. `premium_adjustments` keeps the history, unique on `(driver_id, score_version)`.
+- One `premium.adjusted` per applied score, keyed by `driverId`.
+- Failures: unreadable or wrong-contract events (including a score outside 0-100) go straight to `score.updated.policy-rating.dlt`; anything else is retried 3 times first.
+- API: `GET /v1/drivers/{driverId}/premium` returns the current rating, 404 until a score was applied.
 
 ## rewards (P2, not designed yet)
 

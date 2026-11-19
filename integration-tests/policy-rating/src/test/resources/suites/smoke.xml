@@ -1,0 +1,13 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="policy-rating smoke" parallel="classes" thread-count="4">
+  <test name="policy-rating smoke">
+    <groups>
+      <run>
+        <include name="smoke"/>
+      </run>
+    </groups>
+    <packages>
+      <package name="com.qnt.safedrive.tests.policyrating.*"/>
+    </packages>
+  </test>
+</suite>
