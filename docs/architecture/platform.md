@@ -8,7 +8,7 @@
 platform/
   infra/      Kafka (single-node KRaft) and Postgres manifests
   services/   one deploy manifest per service
-  scripts/    deploy.sh, helpers
+  scripts/    deploy.sh, replay-dlt.sh
 ```
 
 ## Infra

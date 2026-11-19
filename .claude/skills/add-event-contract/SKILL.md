@@ -7,6 +7,6 @@ Args: event name, producer service, consumer services.
 
 1. Create or update `docs/contracts/<event>.v<N>.json` using the shared envelope fields.
 2. Keep changes backward compatible; otherwise bump the version.
-3. Add producer and consumer contract tests in `integration-tests/contracts/`.
+3. Add producer and consumer contract tests as unit tests in the producing and consuming services (schema checks for shared examples stay in `commons`).
 4. Update the event catalog in `docs/architecture/`.
 5. Follow `.claude/rules/contracts.md`.

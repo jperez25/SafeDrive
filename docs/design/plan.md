@@ -38,7 +38,7 @@ Phase 2 (after core is stable): `rewards`, `claims`. See `docs/architecture/serv
 | `docs` | `design/` (plan), `architecture/` (architecture notes, event catalog), `contracts/` (event schemas, API specs). |
 | `platform` | Deploy scripts and infra manifests (Kafka, Postgres, per-service deploy). |
 | `simulator` | Tool that generates realistic trips and injects faults. Not a service. |
-| `integration-tests` | Black-box tests. Own module, sub-directory per service, plus `e2e`, `contracts`, `framework`, `suites`. |
+| `integration-tests` | Black-box tests. Own module with `core`, one sub-module per service, and `e2e`. |
 
 ## 3. Repo layout
 
@@ -53,11 +53,10 @@ SafeDrive/
   services/{telemetry-ingest,trip-processor,scoring,policy-rating}/
   simulator/
   integration-tests/
-    framework/   shared clients, factories, validators, waiter
-    <service>/   tests for one service
-    e2e/         cross-service flows
-    contracts/   producer/consumer contract tests
-    suites/      one XML suite per service + e2e + contracts + smoke + master
+    core/        shared models, clients, factories, validators, waiter
+    <service>/   tests for one service, organized by feature
+                 src/test/resources/environment.<env>.json, suites/{master,regression,smoke}.xml
+    e2e/         full end-to-end flow, from ingest to premium
 ```
 
 ## 4. Deployment
@@ -69,11 +68,17 @@ SafeDrive/
 
 ## 5. Testing
 
-- **Unit tests** live inside each service module (and `commons`).
-- **Integration tests** live in `integration-tests`, black-box, one sub-directory per service.
-- **Suites:** one XML suite per service, plus `e2e`, `contracts`, `smoke`, and `master`.
-- **Smoke gates everything:** a smoke failure stops the run.
-- **Contracts run before integration tests** and fail fast on schema breaks.
+- **Unit tests** live inside each service module (and `commons`). Contract tests (schema and
+  Pact) are unit-level and live there too.
+- **Integration tests** live in `integration-tests`, black-box, one sub-module per service.
+  Inside a service, tests are grouped by feature, with a positive and a negative test class per
+  feature, both extending an abstract class for that feature (abstract test pattern).
+- **`core`** holds everything reusable: models, clients, factories, validators, waiter.
+- **`e2e`** is the one special module: it checks the full flow end to end.
+- **Resources:** each service module has `src/test/resources/` with `environment.<env>.json` files
+  (base URLs, topics, timeouts per environment) and a `suites/` dir.
+- **Suites:** each service has `master.xml`, `regression.xml` and `smoke.xml`. `master.xml` calls the other two.
+- Run by module and suite, e.g. `-pl integration-tests/<module> -Dsuite=smoke -Denv=<env>`.
 - Follow the QuickMoney conventions: TestNG, REST Assured, Allure, `AbstractTest`, validators with
   child validators, factories with `withX`, constants, atomic and parallel-safe tests,
   best-effort cleanup.
@@ -89,14 +94,14 @@ SafeDrive/
 ## 7. Tech stack (proposed)
 
 Java 25 (Corretto), Spring Boot 4.x with Jackson 3 only, Maven multi-module, Kafka, Postgres, Docker, minikube, TestNG, REST Assured,
-Allure, Pact (contracts), k6 or Gatling (load), GitHub Actions (CI).
+Allure, Pact (contracts, unit-level), k6 or Gatling (load), GitHub Actions (CI).
 
 ## 8. Phases
 
 1. Foundations: parent pom, `commons`, event envelope, contracts, deploy of infra.
 2. Vertical slice: `telemetry-ingest` → `trip-processor` with health endpoints and first tests.
 3. `scoring` and `policy-rating`, e2e flow.
-4. Failure-mode and contract suites.
+4. Failure-mode tests.
 5. Observability, load tests, CI.
 6. Phase 2 services: `rewards`, `claims`.
 

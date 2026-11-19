@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: trip-processor
+  datasource:
+    url: ${TRIP_DB_URL:jdbc:postgresql://localhost:5432/safedrive}
+    username: ${TRIP_DB_USER:trip}
+    password: ${TRIP_DB_PASSWORD}
+  flyway:
+    schemas: trip
+    default-schema: trip
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: trip-processor
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        enable.idempotence: true
+
+safedrive:
+  trip:
+    # A trip with no new batch for this long is closed with whatever arrived.
+    idle-timeout-s: ${TRIP_IDLE_TIMEOUT_S:300}
+    idle-check-ms: ${TRIP_IDLE_CHECK_MS:5000}
+  outbox:
+    poll-ms: ${OUTBOX_POLL_MS:500}
+
+logging:
+  structured:
+    format:
+      console: logstash
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+
+server:
+  port: ${PORT:8080}

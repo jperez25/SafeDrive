@@ -13,6 +13,7 @@
   <modules>
     <module>commons</module>
     <module>services/telemetry-ingest</module>
+    <module>services/trip-processor</module>
   </modules>
 
   <properties>

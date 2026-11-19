@@ -76,8 +76,13 @@ build_image() {
   local svc="$1"
   [[ -f "$ROOT/services/$svc/Dockerfile" ]] || return 0
   log "$svc: build image"
-  (cd "$ROOT" && ./mvnw -q -pl "services/$svc" -am package -DskipTests)
-  minikube image build -t "safedrive/$svc:dev" -f "$ROOT/services/$svc/Dockerfile" "$ROOT"
+  # Relative paths on purpose: with absolute ones `minikube image build` silently builds nothing.
+  (
+    cd "$ROOT"
+    ./mvnw -q -pl "services/$svc" -am package -DskipTests
+    minikube image build -t "safedrive/$svc:dev" -f "services/$svc/Dockerfile" .
+  )
+  minikube image ls | grep -q "safedrive/$svc:dev" || die "image safedrive/$svc:dev was not built"
 }
 
 deploy_service() {

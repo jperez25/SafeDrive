@@ -52,6 +52,18 @@ Consumes `trip.raw`, builds trips, detects driving events.
 - Late data after close: stored, trip republished as `trip.completed` with `revision + 1`.
 - Duplicates: dropped by `eventId` and by the `(trip_id, batch_seq)` unique key.
 
+**As built**
+- One transaction per message: `processed_events`, trip row lock, batch insert, and the outbox rows for the results.
+- Detection runs over the whole assembled trip. Consecutive samples breaking the same rule are one event, stamped with
+  the first sample of the run and the worst severity (`DrivingEventDetector` holds the thresholds). Table `driving_events`
+  records what was already published, so a revision only emits events that are new. `crash` is not detected yet (claims, P2).
+- Idle timeout: `TRIP_IDLE_TIMEOUT_S` (default 300) closes a trip whose last batch is missing or has a gap.
+- `trip.completed` carries cumulative `eventCounts` for every revision.
+- Failures: unreadable or wrong-contract events go straight to `trip.raw.trip-processor.dlt` (retrying cannot help);
+  anything else is retried 3 times with backoff first. Each dead-lettering is logged with topic, offset, key and reason.
+- Replay: `platform/scripts/replay-dlt.sh trip.raw.trip-processor.dlt` copies new dead letters back to `trip.raw`
+  with key and envelope untouched. A message that still fails goes back to the dead-letter topic.
+
 ## scoring (P1)
 
 Consumes `trip.completed` and `driving.event`, produces a driver risk score.
