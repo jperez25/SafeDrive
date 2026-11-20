@@ -1,5 +1,6 @@
 package com.qnt.safedrive.tests.core.client;
 
+import io.qameta.allure.Step;
 import com.qnt.safedrive.tests.core.model.constants.Paths;
 import io.restassured.response.Response;
 
@@ -10,19 +11,23 @@ public class HealthClient extends ServiceClient {
         super(baseUrl);
     }
 
+    @Step("Check liveness")
     public Response liveness() {
         return request(null).get(Paths.HEALTH_LIVENESS);
     }
 
+    @Step("Check readiness")
     public Response readiness() {
         return request(null).get(Paths.HEALTH_READINESS);
     }
 
+    @Step("Check overall health")
     public Response overall() {
         return request(null).get(Paths.HEALTH);
     }
 
     /** Any path on the service, for negative checks. */
+    @Step("GET {path}")
     public Response get(String path) {
         return request(null).get(path);
     }

@@ -1,5 +1,8 @@
 package com.qnt.safedrive.tests.core.client;
 
+import io.qameta.allure.Param;
+import io.qameta.allure.Step;
+import io.qameta.allure.model.Parameter;
 import com.qnt.safedrive.tests.core.model.Envelope;
 import com.qnt.safedrive.tests.core.utils.Json;
 import com.qnt.safedrive.tests.core.utils.TestEnvironment;
@@ -29,7 +32,8 @@ public class KafkaPublisher {
     }
 
     /** Sends the value as it is, whether or not it is JSON. */
-    public void send(String topic, String key, String value) {
+    @Step("Publish to topic {topic} with key {key}")
+    public void send(String topic, String key, @Param(mode = Parameter.Mode.HIDDEN) String value) {
         try (KafkaProducer<String, String> producer = new KafkaProducer<>(properties())) {
             producer.send(new ProducerRecord<>(topic, key, value)).get(SEND_TIMEOUT.toSeconds(), TimeUnit.SECONDS);
         } catch (InterruptedException e) {

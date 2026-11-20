@@ -1,5 +1,8 @@
-# Build and unit tests on every push and PR, then a real deployment on minikube: images are built, the stack is
-# deployed with platform/scripts/deploy.sh, and the black-box suites (smoke gate, then regression) run against it.
+# Two jobs, each shown as its own box on the run page:
+#   unit         build + unit/contract tests (every push and PR)
+#   integration  real deployment on minikube, then the black-box suites (needs unit); the Allure report is built
+#                by the tests themselves (AllureReportListener), even when tests failed
+# Deploy and tests share one job on purpose: the minikube cluster lives on the runner and cannot be passed to another job.
 name: CI
 
 on:
@@ -55,19 +58,21 @@ jobs:
           distribution: corretto
           java-version: "25"
           cache: maven
-      - uses: medyagh/setup-minikube@v0.0.19
+      - name: 1. Start minikube
+        uses: medyagh/setup-minikube@v0.0.19
         with:
           cpus: 2
           memory: 6144m
-      # Postgres, Kafka and the four services. Monitoring (Prometheus, Grafana) is left out to save memory.
-      - name: Deploy
+      # Monitoring (Prometheus, Grafana) is left out to save memory.
+      - name: 2. Deploy infra (Postgres, Kafka)
+        run: platform/scripts/deploy.sh infra
+      - name: 3. Deploy services
         run: |
-          platform/scripts/deploy.sh infra
           for svc in telemetry-ingest trip-processor scoring policy-rating; do
             platform/scripts/deploy.sh "$svc"
           done
           platform/scripts/deploy.sh status
-      - name: Port-forward
+      - name: 4. Port-forward
         run: |
           nohup platform/scripts/port-forward.sh > port-forward.log 2>&1 &
           for i in $(seq 1 30); do
@@ -76,26 +81,22 @@ jobs:
           done
           cat port-forward.log
           exit 1
-      - name: Run ${{ env.SUITE }}
+      - name: 5. Run ${{ env.SUITE }} tests
         run: ./mvnw -B -ntp -fae -pl "$TEST_MODULES" -am test -Dsuite="$SUITE" -Denv="$TEST_ENV"
-      # Runs even when tests failed. The report is built from target/allure-results of each module.
-      - name: Build Allure reports
-        if: always()
-        run: ./mvnw -B -ntp -pl "$TEST_MODULES" allure:report
-      - name: Cluster state and service logs
+      - name: 6. Cluster state and service logs (on failure)
         if: failure()
         run: |
           kubectl -n safedrive get pods -o wide
           for svc in telemetry-ingest trip-processor scoring policy-rating; do
             echo "::group::$svc"; kubectl -n safedrive logs "deployment/$svc" --tail=300 || true; echo "::endgroup::"
           done
-      - name: Upload reports
+      - name: 7. Upload Allure reports and surefire output
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: allure-reports-${{ env.TEST_ENV }}
           path: |
-            integration-tests/*/target/site/allure-maven-plugin
+            integration-tests/*/target/allure-report
             integration-tests/*/target/surefire-reports
           if-no-files-found: warn
           retention-days: 14

@@ -1,5 +1,6 @@
 package com.qnt.safedrive.tests.core.trace;
 
+import io.qameta.allure.Step;
 import com.qnt.safedrive.tests.core.utils.TestEnvironment;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,6 +23,7 @@ public class DeadLetterReplayer {
     }
 
     /** Replays {@code <topic>.<group>.dlt}; fails with the script output when it exits non-zero or takes too long. */
+    @Step("Replay dead letters of {deadLetterTopic}")
     public void replay(String deadLetterTopic) {
         Path script = env.scriptsDir().resolve("replay-dlt.sh");
         Path output = null;

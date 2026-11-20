@@ -31,6 +31,17 @@
       <groupId>io.qameta.allure</groupId>
       <artifactId>allure-rest-assured</artifactId>
     </dependency>
+    <!-- Report engine used in-process by AllureReportListener; brings Jackson 2 (see the enforcer note in the parent pom) -->
+    <dependency>
+      <groupId>io.qameta.allure</groupId>
+      <artifactId>allure-generator</artifactId>
+    </dependency>
+    <!-- Loaded as a javaagent by surefire (argLine in the parent pom); needs to be resolved into the local repository -->
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjweaver</artifactId>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>tools.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>

@@ -126,10 +126,15 @@ service schemas, so there is no DB access.
   through `META-INF/services`, so no suite file lists it) adds `environment.properties`: environment name, endpoints,
   namespace, Kafka address, suite and, in GitHub Actions, the run, ref and commit. A new environment is a new
   `environment.<env>.json`; the report then shows which one it ran against.
-- Build the HTML after the tests: `./mvnw -pl integration-tests/<module> allure:report`; open
-  `target/site/allure-maven-plugin/index.html`. The allure-maven 2.x plugin downloads the report generator itself, so
-  there is no CLI to install. It is a separate Maven invocation on purpose: it also runs after failing tests.
-  The generator needs Jackson 2, so it must stay a plugin and never a project dependency (enforcer rule).
+- The HTML report is built by the tests themselves: `AllureReportListener` (core, same `META-INF/services` file) runs
+  at the end of the TestNG execution, after every suite and `environment.properties` are written, and generates
+  `target/allure-report/index.html` in-process with `allure-generator`; no CLI or extra Maven goal. It never fails the
+  run. Serving it (`allure open`) is up to you.
+- `@Step` works through the AspectJ weaver, loaded as a javaagent by surefire (`argLine` in the integration-tests
+  parent pom). Every client, Kafka and log/script call in `core` is a step (see the testing rules); a failing call shows as the broken step.
+- The generator needs Jackson 2. This is the one accepted exception to the Jackson rule: the Jackson 2 ban is lifted
+  in `integration-tests` only (parent pom), and stays in force for `commons` and every service. Do not use
+  `com.fasterxml.jackson` in test code; use `tools.jackson` through `Json`.
 - CI (`.github/workflows/ci.yml`): `unit`, then `integration` on minikube with the real images and `deploy.sh`,
-  `-Denv=ci`. Reports and surefire output are uploaded as the `allure-reports-ci` artifact. Run it by hand from the
+  `-Denv=ci`. The Allure reports (`target/allure-report` per module) and surefire output are uploaded as the `allure-reports-ci` artifact. Run it by hand from the
   Actions tab and pick `master`, `smoke` or `regression`.

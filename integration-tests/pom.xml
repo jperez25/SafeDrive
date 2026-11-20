@@ -28,6 +28,8 @@
     <testng.version>7.11.0</testng.version>
     <rest-assured.version>6.0.0</rest-assured.version>
     <allure.version>2.35.6</allure.version>
+    <allure-generator.version>2.46.2</allure-generator.version>
+    <aspectj.version>1.9.25.1</aspectj.version>
     <lombok.version>1.18.48</lombok.version>
   </properties>
 
@@ -56,6 +58,16 @@
         <scope>import</scope>
       </dependency>
       <dependency>
+        <groupId>io.qameta.allure</groupId>
+        <artifactId>allure-generator</artifactId>
+        <version>${allure-generator.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.aspectj</groupId>
+        <artifactId>aspectjweaver</artifactId>
+        <version>${aspectj.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.qnt.safedrive</groupId>
         <artifactId>integration-tests-core</artifactId>
         <version>${project.version}</version>
@@ -65,12 +77,22 @@
 
   <build>
     <plugins>
-      <!-- No CLI to install: the 2.x plugin downloads the Java report generator from Maven Central.
-           Run after the tests: ./mvnw -pl integration-tests/<module> allure:report (HTML in target/site/allure-maven-plugin). -->
+      <!-- The allure-generator (used by AllureReportListener) needs Jackson 2. The root rule bans it everywhere
+           else; here it is allowed because the generator is the only reason it is on this test classpath. -->
       <plugin>
-        <groupId>io.qameta.allure</groupId>
-        <artifactId>allure-maven</artifactId>
-        <version>2.18.0</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>enforce-rules</id>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <rules combine.self="override">
+                <requireJavaVersion><version>[25,)</version></requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
     <pluginManagement>
@@ -79,8 +101,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
+            <!-- aspectjweaver weaves Allure's @Step; JDK 23+ warns when byte-buddy (via Allure) uses sun.misc.Unsafe -->
+            <argLine>--sun-misc-unsafe-memory-access=allow -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"</argLine>
             <systemPropertyVariables>
               <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
+              <allure.report.directory>${project.build.directory}/allure-report</allure.report.directory>
             </systemPropertyVariables>
           </configuration>
         </plugin>

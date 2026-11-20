@@ -1,1 +1,2 @@
 com.qnt.safedrive.tests.core.listener.AllureMetadataListener
+com.qnt.safedrive.tests.core.listener.AllureReportListener

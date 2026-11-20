@@ -1,5 +1,8 @@
 package com.qnt.safedrive.tests.core.trace;
 
+import io.qameta.allure.Param;
+import io.qameta.allure.Step;
+import io.qameta.allure.model.Parameter;
 import com.qnt.safedrive.tests.core.utils.TestEnvironment;
 import com.qnt.safedrive.tests.core.utils.Waiter;
 import java.util.List;
@@ -22,6 +25,7 @@ public class CorrelationTracer {
     }
 
     /** Waits until at least {@code count} events with this correlation ID are on the topic. */
+    @Step("Await {count} event(s) on {topic} with correlation ID {correlationId}")
     public List<TopicReader.Message> awaitEvents(String topic, String correlationId, int count) {
         return waiter.until(
                 count + " event(s) on " + topic + " with correlationId " + correlationId,
@@ -32,24 +36,29 @@ public class CorrelationTracer {
     }
 
     /** Waits until a message matching the filter (e.g. a payload field) is on the topic. */
+    @Step("Await matching event on {topic} with correlation ID {correlationId}")
     public TopicReader.Message awaitEvent(
-            String topic, String correlationId, java.util.function.Predicate<TopicReader.Message> filter) {
+            String topic, String correlationId,
+            @Param(mode = Parameter.Mode.HIDDEN) java.util.function.Predicate<TopicReader.Message> filter) {
         return waiter.until(
                 "matching event on " + topic + " with correlationId " + correlationId,
                 () -> topics.readByCorrelationId(topic, correlationId).stream().filter(filter).findFirst());
     }
 
     /** Current events on the topic with this correlation ID (no waiting). */
+    @Step("Read events on {topic} with correlation ID {correlationId}")
     public List<TopicReader.Message> events(String topic, String correlationId) {
         return topics.readByCorrelationId(topic, correlationId);
     }
 
     /** Log lines of a service that carry the correlation ID (no waiting). */
+    @Step("Read {service} logs for correlation ID {correlationId}")
     public List<LogReader.Line> logLines(String service, String correlationId) {
         return logs.readByCorrelationId(service, correlationId);
     }
 
     /** Waits until the service has logged at least one line with the correlation ID. */
+    @Step("Await {service} logs for correlation ID {correlationId}")
     public List<LogReader.Line> awaitLog(String service, String correlationId) {
         return waiter.until(
                 service + " log lines with correlationId " + correlationId,
@@ -60,6 +69,7 @@ public class CorrelationTracer {
     }
 
     /** Waits until at least {@code count} messages with this key are on the topic (dead letters, which may not be envelopes). */
+    @Step("Await {count} message(s) on {topic} with key {key}")
     public List<TopicReader.RawMessage> awaitRawByKey(String topic, String key, int count) {
         return waiter.until(
                 count + " message(s) on " + topic + " with key " + key,

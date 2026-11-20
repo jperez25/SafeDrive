@@ -1,5 +1,8 @@
 package com.qnt.safedrive.tests.core.client;
 
+import io.qameta.allure.Param;
+import io.qameta.allure.Step;
+import io.qameta.allure.model.Parameter;
 import com.qnt.safedrive.tests.core.model.constants.Paths;
 import com.qnt.safedrive.tests.core.utils.Json;
 import com.qnt.safedrive.tests.core.model.Batch;
@@ -17,17 +20,20 @@ public class TelemetryIngestClient extends ServiceClient {
         return postBatch(batch, null);
     }
 
-    public Response postBatch(Batch batch, String correlationId) {
-        return postRaw(Json.write(batch), correlationId);
+    @Step("Post telemetry batch (correlation ID {correlationId})")
+    public Response postBatch(@Param(mode = Parameter.Mode.HIDDEN) Batch batch, String correlationId) {
+        return post(Paths.INGEST_BATCHES, Json.write(batch), correlationId);
     }
 
     /** For negative tests: any body, including malformed JSON. One call, no retry. */
-    public Response postRaw(String body, String correlationId) {
+    @Step("Post raw body to telemetry ingest (correlation ID {correlationId})")
+    public Response postRaw(@Param(mode = Parameter.Mode.HIDDEN) String body, String correlationId) {
         return post(Paths.INGEST_BATCHES, body, correlationId);
     }
 
     /** For a valid batch that must be accepted: retries when the service is down or answers 5xx. */
-    public Response postBatchWithRetry(Batch batch, String correlationId) {
+    @Step("Post telemetry batch with retry (correlation ID {correlationId})")
+    public Response postBatchWithRetry(@Param(mode = Parameter.Mode.HIDDEN) Batch batch, String correlationId) {
         return postWithRetry(Paths.INGEST_BATCHES, Json.write(batch), correlationId);
     }
 }

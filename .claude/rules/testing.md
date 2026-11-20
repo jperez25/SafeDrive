@@ -32,6 +32,16 @@ paths:
   to look up or re-use an ID keeps it in a local variable and passes it explicitly.
 - Tests must be atomic and parallel-safe: unique data per test, best-effort cleanup.
 - Async assertions use the shared waiter in `core`. Never use `Thread.sleep`.
+- Every point of failure is an Allure step: each public method in `core` that calls a service over HTTP, publishes to or
+  reads from Kafka, reads service logs or runs a script (clients, `KafkaPublisher`, `CorrelationTracer`,
+  `DeadLetterReplayer`) carries `@Step("<what happens> {param}")`. Put it on the method tests call, not on helpers
+  it uses or on code the waiter polls, so a retry or a wait stays one step. Hide big or sensitive parameters
+  (bodies, events) with `@Param(mode = Parameter.Mode.HIDDEN)`; the request and response are already attached,
+  with secrets masked.
+- Validators are steps too: every public check (`hasX`, `matchesX`) and every method that opens a child validator
+  (`envelope()`, `ingestBody()`, `tripCompletedPayload()`) carries `@Step`, named after the method and its
+  parameters: `@Step("Has status {status}")`, `@Step("Validate envelope")`. Hide a parameter that is a whole body or
+  event with `@Param(mode = Parameter.Mode.HIDDEN)`.
 - Inside a service, organize by feature: `Abstract<Feature>Test`, `<Feature>PositiveTest` and
   `<Feature>NegativeTest`, with both concrete classes extending the abstract one.
 - Each service module has `src/test/resources/environment.<env>.json` and `suites/{master,regression,smoke}.xml`;
