@@ -82,6 +82,27 @@ score from `GET /v1/drivers/{driverId}/score`. One driver per test keeps them pa
 
 Run: `./mvnw -pl integration-tests/scoring -am test -Dsuite=master -Denv=local` (`-am` builds `core` first).
 
+## E2E tests (`integration-tests/e2e`)
+
+Tests drive only the edge (`POST /v1/telemetry/batches`) and follow one correlation ID across `trip.raw`,
+`trip.completed`, `score.updated` and `premium.adjusted`, then read the score and premium APIs. The wait timeout is
+60s (four hops). Same layout and suites as the service modules; classes sit under `com.qnt.safedrive.tests.e2e.<feature>`.
+
+Factory trips are short (under 1 km), so scoring floors the distance at 1 km: a clean trip scores 100 (`excellent`,
+96.00) and a trip with any driving event scores 0 (`high_risk`, 156.00). Two trips of one driver average to 50 (`poor`, 138.00).
+
+| Feature | Covers |
+|---|---|
+| Happy path | a clean trip ends in score 100, `excellent` band and premium 96.00 (smoke) |
+| Driver journey | speeding trip to `high_risk`; second trip averages and rates from the base premium (no compounding); two drivers do not affect each other; a batch rejected by ingest never enters the pipeline and the driver has no premium |
+| Correlation | ingest creates the ID when the caller sends none and it reaches `premium.adjusted`; every service logs the ID and no log line carries the device ID or a position |
+| Pipeline resilience | duplicate batch has no second effect; out-of-order batches give one result; a late speeding batch revises the trip (revision 2), recomputes the score (version 2) and moves the premium; a poison event is dead-lettered without blocking the chain |
+
+Each case checks the exact number of events on every topic (watching a 5s window for extras). Correlation has no
+negative class yet; outages (pod or Kafka down) and idle-timeout closing are still to do.
+
+Run: `./mvnw -pl integration-tests/e2e -am test -Dsuite=master -Denv=local`.
+
 ## Failure-mode matrix
 
 | Scenario | Where it bites | What the test checks |

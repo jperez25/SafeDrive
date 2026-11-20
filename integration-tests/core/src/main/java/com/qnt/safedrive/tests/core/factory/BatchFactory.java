@@ -56,6 +56,14 @@ public final class BatchFactory {
                 .build();
     }
 
+    /** Same trip, next batch (see {@link #nextOf}), with one speeding event in it. */
+    public static Batch aSpeedingBatchAfter(Batch previous) {
+        Batch next = nextOf(previous);
+        List<Sample> samples = new ArrayList<>(next.samples());
+        samples.set(EVENT_INDEX, samples.get(EVENT_INDEX).withSpeedKilometersPerHour(SPEEDING_SPEED));
+        return next.withSamples(samples);
+    }
+
     /** A cruise batch with one medium-severity hard brake. */
     public static Batch aMediumBrakeBatch() {
         return withEvent(aBatch(), 50.0, MEDIUM_BRAKE_ACCELERATION);

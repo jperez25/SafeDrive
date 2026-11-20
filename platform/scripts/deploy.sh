@@ -38,6 +38,7 @@ load_env() {
   : "${TRIP_DB_PASSWORD:=changeme}"
   : "${SCORING_DB_PASSWORD:=changeme}"
   : "${RATING_DB_PASSWORD:=changeme}"
+  : "${SAFEDRIVER_DB_PASSWORD:=changeme}"
 }
 
 apply_secrets() {
@@ -48,6 +49,7 @@ apply_secrets() {
     --from-literal=TRIP_DB_PASSWORD="$TRIP_DB_PASSWORD" \
     --from-literal=SCORING_DB_PASSWORD="$SCORING_DB_PASSWORD" \
     --from-literal=RATING_DB_PASSWORD="$RATING_DB_PASSWORD" \
+    --from-literal=SAFEDRIVER_DB_PASSWORD="$SAFEDRIVER_DB_PASSWORD" \
     --dry-run=client -o yaml | kubectl apply -f - >/dev/null
 }
 

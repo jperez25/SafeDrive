@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Forwards the local minikube services, Postgres and Kafka to localhost so tests and tools can reach them.
 #   port-forward.sh          runs in the foreground; Ctrl-C stops every forward
+#   port-forward.sh down     kills all port-forwards of the safedrive namespace (also -down / --down), for stale ones
 # Services that are not deployed yet (scoring, policy-rating) are skipped. Override the service and Postgres local ports with env vars.
 #
 # Default local ports: telemetry-ingest 8081, trip-processor 8082, scoring 8083, policy-rating 8084,
@@ -15,6 +16,21 @@ PIDS=()
 
 log() { printf '==> %s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+
+case "${1:-}" in
+  down|-down|--down)
+    # Kill every port-forward of this namespace, including stale ones left by a crashed run.
+    if pkill -f "kubectl -n $NS port-forward"; then
+      log "killed stale port-forwards"
+    else
+      log "no port-forwards running"
+    fi
+    trap - EXIT
+    exit 0
+    ;;
+  "") ;;
+  *) die "unknown argument '$1' (usage: port-forward.sh [down])" ;;
+esac
 
 command -v kubectl >/dev/null || die "kubectl not found"
 [[ "$(kubectl config current-context 2>/dev/null || true)" == "minikube" ]] \

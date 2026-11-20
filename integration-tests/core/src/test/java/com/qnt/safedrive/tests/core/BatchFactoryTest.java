@@ -46,6 +46,15 @@ public class BatchFactoryTest {
     }
 
     @Test
+    public void speedingBatchAfterContinuesTheTripWithOneFastSample() {
+        Batch first = BatchFactory.aBatch().withLast(false);
+        Batch late = BatchFactory.aSpeedingBatchAfter(first);
+        assertThat(late.tripId()).isEqualTo(first.tripId());
+        assertThat(late.batchSequence()).isEqualTo(1);
+        assertThat(late.samples()).filteredOn(s -> s.speedKilometersPerHour() > 140.0).hasSize(1);
+    }
+
+    @Test
     public void missingFieldsAreLeftOutOfTheJson() {
         String json = Json.write(BatchFactory.aBatch().withTripId(null));
         assertThat(Json.tree(json).has("tripId")).isFalse();
