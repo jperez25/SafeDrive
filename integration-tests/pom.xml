@@ -64,6 +64,15 @@
   </dependencyManagement>
 
   <build>
+    <plugins>
+      <!-- No CLI to install: the 2.x plugin downloads the Java report generator from Maven Central.
+           Run after the tests: ./mvnw -pl integration-tests/<module> allure:report (HTML in target/site/allure-maven-plugin). -->
+      <plugin>
+        <groupId>io.qameta.allure</groupId>
+        <artifactId>allure-maven</artifactId>
+        <version>2.18.0</version>
+      </plugin>
+    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>

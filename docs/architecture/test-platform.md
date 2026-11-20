@@ -119,3 +119,17 @@ Run: `./mvnw -pl integration-tests/e2e -am test -Dsuite=master -Denv=local`.
 
 The tracing helper follows a correlation ID through logs and topics only. Black-box tests do not read
 service schemas, so there is no DB access.
+
+## Reports and CI
+
+- Every run writes Allure results to `target/allure-results` of the module. `AllureMetadataListener` (core, registered
+  through `META-INF/services`, so no suite file lists it) adds `environment.properties`: environment name, endpoints,
+  namespace, Kafka address, suite and, in GitHub Actions, the run, ref and commit. A new environment is a new
+  `environment.<env>.json`; the report then shows which one it ran against.
+- Build the HTML after the tests: `./mvnw -pl integration-tests/<module> allure:report`; open
+  `target/site/allure-maven-plugin/index.html`. The allure-maven 2.x plugin downloads the report generator itself, so
+  there is no CLI to install. It is a separate Maven invocation on purpose: it also runs after failing tests.
+  The generator needs Jackson 2, so it must stay a plugin and never a project dependency (enforcer rule).
+- CI (`.github/workflows/ci.yml`): `unit`, then `integration` on minikube with the real images and `deploy.sh`,
+  `-Denv=ci`. Reports and surefire output are uploaded as the `allure-reports-ci` artifact. Run it by hand from the
+  Actions tab and pick `master`, `smoke` or `regression`.

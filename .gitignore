@@ -6,3 +6,6 @@ target/
 allure-results/
 allure-report/
 .env
+
+# Allure report generator cache (downloaded by allure-maven)
+.allure/

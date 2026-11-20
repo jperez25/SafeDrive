@@ -1,0 +1,101 @@
+# Build and unit tests on every push and PR, then a real deployment on minikube: images are built, the stack is
+# deployed with platform/scripts/deploy.sh, and the black-box suites (smoke gate, then regression) run against it.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Test suite to run against the deployed stack
+        type: choice
+        options: [master, smoke, regression]
+        default: master
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  SUITE: ${{ inputs.suite || 'master' }}
+  TEST_ENV: ci
+  # Modules of the black-box tests; core is built through -am.
+  TEST_MODULES: integration-tests/telemetry-ingest,integration-tests/trip-processor,integration-tests/scoring,integration-tests/policy-rating,integration-tests/e2e
+
+jobs:
+  unit:
+    name: Build and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: "25"
+          cache: maven
+      # Not a plain `./mvnw test`: from the root it would also start the black-box suites.
+      - name: Unit and contract tests (also enforces the Jackson 3 rule)
+        run: ./mvnw -B -ntp -pl commons,services/telemetry-ingest,services/trip-processor,services/scoring,services/policy-rating,integration-tests/core -am verify
+
+  integration:
+    name: Deploy to minikube and run ${{ inputs.suite || 'master' }}
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: "25"
+          cache: maven
+      - uses: medyagh/setup-minikube@v0.0.19
+        with:
+          cpus: 2
+          memory: 6144m
+      # Postgres, Kafka and the four services. Monitoring (Prometheus, Grafana) is left out to save memory.
+      - name: Deploy
+        run: |
+          platform/scripts/deploy.sh infra
+          for svc in telemetry-ingest trip-processor scoring policy-rating; do
+            platform/scripts/deploy.sh "$svc"
+          done
+          platform/scripts/deploy.sh status
+      - name: Port-forward
+        run: |
+          nohup platform/scripts/port-forward.sh > port-forward.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -sf localhost:8081/actuator/health >/dev/null && curl -sf localhost:8084/actuator/health >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat port-forward.log
+          exit 1
+      - name: Run ${{ env.SUITE }}
+        run: ./mvnw -B -ntp -fae -pl "$TEST_MODULES" -am test -Dsuite="$SUITE" -Denv="$TEST_ENV"
+      # Runs even when tests failed. The report is built from target/allure-results of each module.
+      - name: Build Allure reports
+        if: always()
+        run: ./mvnw -B -ntp -pl "$TEST_MODULES" allure:report
+      - name: Cluster state and service logs
+        if: failure()
+        run: |
+          kubectl -n safedrive get pods -o wide
+          for svc in telemetry-ingest trip-processor scoring policy-rating; do
+            echo "::group::$svc"; kubectl -n safedrive logs "deployment/$svc" --tail=300 || true; echo "::endgroup::"
+          done
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-reports-${{ env.TEST_ENV }}
+          path: |
+            integration-tests/*/target/site/allure-maven-plugin
+            integration-tests/*/target/surefire-reports
+          if-no-files-found: warn
+          retention-days: 14
