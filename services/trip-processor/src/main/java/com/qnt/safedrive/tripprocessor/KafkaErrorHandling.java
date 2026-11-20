@@ -1,5 +1,6 @@
 package com.qnt.safedrive.tripprocessor;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +22,14 @@ class KafkaErrorHandling {
     static final String GROUP = "trip-processor";
 
     @Bean
-    DefaultErrorHandler errorHandler(KafkaTemplate<String, String> template) {
+    DefaultErrorHandler errorHandler(KafkaTemplate<String, String> template, MeterRegistry meters) {
         var recoverer = new DeadLetterPublishingRecoverer(
                 template, (record, ex) -> new TopicPartition(record.topic() + "." + GROUP + ".dlt", record.partition()));
         // Log the reason (never the payload) so a dead-lettered event is visible in the logs.
         org.springframework.kafka.listener.ConsumerAwareRecordRecoverer logAndRecover = (record, consumer, ex) -> {
             log.error("dead-lettering {}-{}@{} key={}: {}", record.topic(), record.partition(), record.offset(),
                     record.key(), ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage());
+            meters.counter("safedrive.events.dead_lettered", "topic", record.topic()).increment();
             recoverer.accept(record, consumer, ex);
         };
         var backOff = new ExponentialBackOffWithMaxRetries(3);

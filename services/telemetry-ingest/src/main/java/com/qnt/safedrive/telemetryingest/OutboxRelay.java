@@ -1,6 +1,7 @@
 package com.qnt.safedrive.telemetryingest;
 
 import com.qnt.safedrive.commons.CorrelationId;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -28,10 +29,12 @@ public class OutboxRelay {
 
     private final JdbcClient jdbc;
     private final KafkaTemplate<String, String> kafka;
+    private final MeterRegistry meters;
 
-    public OutboxRelay(JdbcClient jdbc, KafkaTemplate<String, String> kafka) {
+    public OutboxRelay(JdbcClient jdbc, KafkaTemplate<String, String> kafka, MeterRegistry meters) {
         this.jdbc = jdbc;
         this.kafka = kafka;
+        this.meters = meters;
     }
 
     @Scheduled(fixedDelayString = "${safedrive.outbox.poll-ms:500}")
@@ -60,6 +63,7 @@ public class OutboxRelay {
             record.headers().add(CorrelationId.KAFKA_HEADER, row.correlationId().getBytes(StandardCharsets.UTF_8));
             kafka.send(record).get(10, TimeUnit.SECONDS);
             jdbc.sql("UPDATE outbox SET sent_at = now() WHERE id = :id").param("id", row.id()).update();
+            meters.counter("safedrive.events.published", "topic", row.topic()).increment();
             try (CorrelationId.Scope ignored = CorrelationId.bind(row.correlationId())) {
                 log.info("published event {} to {}", row.eventId(), row.topic());
             }

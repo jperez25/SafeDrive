@@ -5,7 +5,7 @@
 # Services that are not deployed yet (scoring, policy-rating) are skipped. Override the service and Postgres local ports with env vars.
 #
 # Default local ports: telemetry-ingest 8081, trip-processor 8082, scoring 8083, policy-rating 8084,
-#                      postgres 5432, kafka 9094.
+#                      grafana 3000, prometheus 9090, postgres 5432, kafka 9094.
 # Kafka note: the broker has a second listener (EXTERNAL, advertised as localhost:9094), so a Kafka client on the
 # host can consume and produce through this forward.
 # The local port is fixed at 9094 because the broker advertises localhost:9094; it cannot be overridden. The in-cluster listener (9092) is for the services only.
@@ -62,6 +62,8 @@ forward svc/telemetry-ingest "${INGEST_PORT:-8081}" 8080
 forward svc/trip-processor   "${TRIP_PORT:-8082}" 8080
 forward svc/scoring          "${SCORING_PORT:-8083}" 8080
 forward svc/policy-rating    "${RATING_PORT:-8084}" 8080
+forward svc/grafana          "${GRAFANA_PORT:-3000}" 3000
+forward svc/prometheus       "${PROMETHEUS_PORT:-9090}" 9090
 forward pod/postgres-0       "${POSTGRES_PORT:-5432}" 5432
 forward pod/kafka-0          9094 9094
 

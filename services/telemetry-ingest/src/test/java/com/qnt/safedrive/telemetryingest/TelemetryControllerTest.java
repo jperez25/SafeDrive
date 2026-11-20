@@ -25,7 +25,7 @@ class TelemetryControllerTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.standaloneSetup(new TelemetryController(new BatchValidator(), service))
+        mvc = MockMvcBuilders.standaloneSetup(new TelemetryController(new BatchValidator(), service, new io.micrometer.core.instrument.simple.SimpleMeterRegistry()))
                 .addFilters(new CorrelationIdFilter())
                 .build();
     }

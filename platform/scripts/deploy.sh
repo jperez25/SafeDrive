@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # SafeDrive local deploy (minikube).
-#   deploy.sh infra | <service> | all | down | status
+#   deploy.sh infra | monitoring | <service> | all | down | status
+# monitoring = kafka-exporter, Prometheus and Grafana (needs infra and the services to be useful); `all` includes it.
 # Infra (Postgres, Kafka, topics) first, then services. Every step waits for readiness.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 INFRA_DIR="$ROOT/platform/infra"
 SERVICES_DIR="$ROOT/platform/services"
+MON_DIR="$ROOT/platform/monitoring"
 NS=safedrive
 SERVICES=(telemetry-ingest trip-processor scoring policy-rating)
 TIMEOUT=240s
@@ -15,7 +17,7 @@ log() { printf '==> %s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
 usage() {
-  echo "usage: deploy.sh infra | <service> | all | down | status"
+  echo "usage: deploy.sh infra | monitoring | <service> | all | down | status"
   echo "services: ${SERVICES[*]}"
   exit 1
 }
@@ -71,6 +73,19 @@ deploy_infra() {
   log "infra ready"
 }
 
+deploy_monitoring() {
+  log "monitoring"
+  kubectl -n "$NS" create configmap grafana-dashboards --from-file="$MON_DIR/dashboards" \
+    --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+  kubectl apply -f "$MON_DIR"
+  local d
+  for d in kafka-exporter prometheus grafana; do
+    kubectl -n "$NS" rollout restart "deployment/$d" >/dev/null
+    kubectl -n "$NS" rollout status "deployment/$d" --timeout="$TIMEOUT"
+  done
+  log "monitoring ready"
+}
+
 has_manifest() { [[ -d "$SERVICES_DIR/$1" ]] && compgen -G "$SERVICES_DIR/$1/*.yaml" >/dev/null; }
 
 # Builds the jar and the image straight into minikube's image store (no registry).
@@ -103,6 +118,7 @@ deploy_all() {
   for svc in "${SERVICES[@]}"; do
     if has_manifest "$svc"; then deploy_service "$svc"; else log "skip $svc (no manifest yet)"; fi
   done
+  deploy_monitoring
 }
 
 down() {
@@ -120,7 +136,7 @@ status() {
       || echo "$sts: not deployed"
   done
   local svc
-  for svc in "${SERVICES[@]}"; do
+  for svc in "${SERVICES[@]}" kafka-exporter prometheus grafana; do
     kubectl -n "$NS" get deployment "$svc" -o jsonpath="$svc: {.status.readyReplicas}/{.spec.replicas} ready{'\n'}" 2>/dev/null \
       || echo "$svc: not deployed"
   done
@@ -130,6 +146,7 @@ status() {
 require_minikube
 case "$1" in
   infra)  deploy_infra ;;
+  monitoring) deploy_monitoring ;;
   all)    deploy_all ;;
   down)   down ;;
   status) status ;;

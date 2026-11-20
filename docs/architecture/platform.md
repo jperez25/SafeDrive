@@ -37,10 +37,16 @@ platform/
 - Forwards `telemetry-ingest` (8081), `trip-processor` (8082), `scoring` (8083), `policy-rating` (8084),
   Postgres (5432) and Kafka (9094) to localhost; runs in the foreground, Ctrl-C stops all. Services that are
   not deployed are skipped. Override ports with `INGEST_PORT`, `TRIP_PORT`, `SCORING_PORT`, `RATING_PORT`,
-  `POSTGRES_PORT`. The Kafka port is fixed at 9094.
+  `POSTGRES_PORT`, `GRAFANA_PORT`, `PROMETHEUS_PORT`. The Kafka port is fixed at 9094.
 - Kafka has two client listeners: `PLAINTEXT` (9092, in-cluster, used by the services) and `EXTERNAL`, advertised as
   `localhost:9094` and reached through the forward, so the tests use a Kafka client directly on the host.
 
-## Later
+## Monitoring
 
-Prometheus, Grafana and kafka-exporter (consumer lag), per `plan.md` section 6.
+- `deploy.sh monitoring` (also part of `all`) deploys kafka-exporter, Prometheus (static scrape targets, 6h retention) and
+  Grafana (anonymous viewer, provisioned datasource and the `SafeDrive pipeline` dashboard from `platform/monitoring/dashboards/`).
+- Every service exposes `/actuator/prometheus`. Business metrics: `safedrive_ingest_batches_total{status}` (ingest),
+  `safedrive_events_published_total{topic}` (every service, counted when the outbox relay publishes) and
+  `safedrive_events_dead_lettered_total{topic}` (the three consumers). Consumer lag comes from kafka-exporter
+  (`kafka_consumergroup_lag`).
+- `port-forward.sh` also forwards Grafana (3000) and Prometheus (9090).
