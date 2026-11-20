@@ -138,3 +138,42 @@ service schemas, so there is no DB access.
 - CI (`.github/workflows/ci.yml`): `unit`, then `integration` on minikube with the real images and `deploy.sh`,
   `-Denv=ci`. The Allure reports (`target/allure-report` per module) and surefire output are uploaded as the `allure-reports-ci` artifact. Run it by hand from the
   Actions tab and pick `master`, `smoke` or `regression`.
+
+## Load tests (`integration-tests/load`)
+
+Gatling (Java DSL) simulations that reuse `core` (batch factory, IDs, paths, environment files), so the load sends
+exactly what the functional tests send. Gatling brings Jackson 2; that is allowed in `integration-tests` (see
+`.claude/rules/code-style.md`), and the load code itself still uses Jackson 3 through `core`.
+
+| Simulation | What it does | Fails when |
+|---|---|---|
+| `IngestThroughputSimulation` | new drivers arrive at a steady rate, each posts one valid batch | any non-`202`, or p99 over the limit |
+| `EndToEndLatencySimulation` | a driver posts a batch, then polls the premium API until it exists | a driver waits longer than the SLO (`-Dload.e2e.slo.ms`, default 30 s) or never gets a premium |
+| `DuplicatesUnderLoadSimulation` | post (`202`), repeat (`200`), same batch ID with other content (`409`) | any other status, never a `5xx` |
+
+- **Profiles:** `smoke` (2 drivers/s, 30 s), `baseline` (10/s, 2.5 min), `stress` (50/s, 3 min), chosen with
+  `-Dload.profile`. The rates and the limits are provisional: run `baseline` on the target hardware, record the numbers,
+  then pin the thresholds from them.
+- **End-to-end latency:** Gatling cannot assert on a group duration (its group response time leaves out the pauses), so a
+  late driver sends one deliberately failing "SLO breach" request. The real distribution is the group *duration* in the
+  report ("ingest to premium" page).
+- **How the load reaches the services** (`platform/scripts/load.sh <ingest|e2e|duplicates|all> [profile] --mode ...`):
+
+| Mode | Path | Use |
+|---|---|---|
+| `incluster` (default) | Gatling pod calls the services by DNS, no host tunnel | the numbers to trust; CI default |
+| `nodeport` | host process through a NodePort; on a Docker driver without a reachable node IP (macOS) through `minikube service --url`, which is a tunnel | outside-the-cluster client; direct (no tunnel) on a CI runner |
+| `portforward` | `port-forward.sh` | dev and smoke only |
+
+  Smoke ingest through the three paths (2 requests/s, 57 requests): p50 5 ms in-cluster, 11 ms port-forward, 47 ms
+  through the minikube tunnel. The tunnel is not the services, so only `incluster` (or `nodeport` on a direct node IP) is
+  a measurement of them.
+- **Resources:** the generator shares the single minikube node with the services; the pod has fixed requests and
+  limits (500m/512Mi, limit 1 CPU/1Gi). Absolute throughput is a local-hardware number: compare runs on the same
+  hardware, and record the hardware with each baseline.
+- **Reports:** Gatling HTML, `integration-tests/load/target/gatling-cluster/<run>/` (in-cluster) or `target/gatling/`. Watch
+  Grafana during a run for lag, dead letters and publish rates.
+- **CI:** `.github/workflows/load.yml`, manual, with inputs for simulation, profile and mode; reports are uploaded as
+  the `gatling-<profile>-<mode>` artifact. It is not part of `ci.yml`.
+- **Not done yet:** Toxiproxy (injected latency, jitter, bandwidth limits, dropped connections) in front of ingest; a
+  Prometheus lag ceiling as an assertion; pinned thresholds.

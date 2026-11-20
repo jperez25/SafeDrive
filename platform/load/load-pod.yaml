@@ -1,0 +1,29 @@
+# One Gatling run inside the cluster: the generator calls the services by DNS, so there is no host tunnel in the path.
+# load.sh fills in __SIMULATION__ and __PROFILE__, waits for /results/.done, copies the report out and deletes the pod.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: load
+  namespace: safedrive
+  labels:
+    app: load
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 1800
+  containers:
+    - name: load
+      image: safedrive/load:dev
+      imagePullPolicy: Never
+      env:
+        - { name: SIMULATION, value: "__SIMULATION__" }
+        - { name: LOAD_PROFILE, value: "__PROFILE__" }
+        - { name: LOAD_ENV, value: cluster }
+      volumeMounts:
+        - { name: results, mountPath: /results }
+      # Fixed CPU and memory: the generator shares the node with the services, so its footprint must be predictable.
+      resources:
+        requests: { cpu: 500m, memory: 512Mi }
+        limits: { cpu: "1", memory: 1Gi }
+  volumes:
+    - name: results
+      emptyDir: {}

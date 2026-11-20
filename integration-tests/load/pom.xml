@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.qnt.safedrive</groupId>
+    <artifactId>integration-tests</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>integration-tests-load</artifactId>
+  <name>SafeDrive integration tests: load</name>
+  <description>Gatling load simulations. Gatling brings Jackson 2; allowed here like in the rest of integration-tests (see the parent pom).</description>
+
+  <properties>
+    <gatling.version>3.16.1</gatling.version>
+    <gatling-maven-plugin.version>4.22.3</gatling-maven-plugin.version>
+    <env>local</env>
+    <!-- smoke | baseline | stress -->
+    <load.profile>smoke</load.profile>
+    <!-- per-driver limit from ingest to premium, EndToEndLatencySimulation -->
+    <load.e2e.slo.ms>30000</load.e2e.slo.ms>
+    <!-- empty = use the environment file; load.sh sets them to reach the services through a NodePort -->
+    <service.telemetry-ingest.url></service.telemetry-ingest.url>
+    <service.policy-rating.url></service.policy-rating.url>
+  </properties>
+
+  <dependencies>
+    <!-- Batches, IDs, paths and environment files: the load tests send exactly what the functional tests send. -->
+    <dependency>
+      <groupId>com.qnt.safedrive</groupId>
+      <artifactId>integration-tests-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.gatling.highcharts</groupId>
+      <artifactId>gatling-charts-highcharts</artifactId>
+      <version>${gatling.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.gatling</groupId>
+        <artifactId>gatling-maven-plugin</artifactId>
+        <version>${gatling-maven-plugin.version}</version>
+        <configuration>
+          <jvmArgs>
+            <jvmArg>-Denv=${env}</jvmArg>
+            <jvmArg>-Dload.profile=${load.profile}</jvmArg>
+            <jvmArg>-Dload.e2e.slo.ms=${load.e2e.slo.ms}</jvmArg>
+            <jvmArg>-Dservice.telemetry-ingest.url=${service.telemetry-ingest.url}</jvmArg>
+            <jvmArg>-Dservice.policy-rating.url=${service.policy-rating.url}</jvmArg>
+          </jvmArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

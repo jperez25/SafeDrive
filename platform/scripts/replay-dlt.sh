@@ -17,12 +17,15 @@ SRC="${DLT%.*.dlt}"            # strip ".<group>.dlt"
 [[ "$SRC" != "$DLT" && -n "$SRC" ]] || { echo "error: cannot derive the source topic from '$DLT'" >&2; exit 1; }
 GROUP="dlt-replay-$DLT"
 
-COUNT_FILE="$(mktemp)"; trap 'rm -f "$COUNT_FILE"' EXIT
+COUNT_FILE="$(mktemp)"; ERR_FILE="$(mktemp)"; trap 'rm -f "$COUNT_FILE" "$ERR_FILE"' EXIT
 echo "==> replaying $DLT -> $SRC"
-kubectl -n "$NS" exec kafka-0 -- "$KAFKA_BIN/kafka-console-consumer.sh" \
+# The consumer stops by idling until --timeout-ms, which Kafka 4 reports as a TimeoutException with exit code 1.
+# That is the normal end; any other error is real and fails the script (with the consumer's message).
+{ kubectl -n "$NS" exec kafka-0 -- "$KAFKA_BIN/kafka-console-consumer.sh" \
     --bootstrap-server "$BOOTSTRAP" --topic "$DLT" --group "$GROUP" --from-beginning --timeout-ms 10000 \
-    --formatter-property print.key=true --formatter-property "key.separator=$TAB" 2>/dev/null \
-  | grep -F "$TAB" \
+    --formatter-property print.key=true --formatter-property "key.separator=$TAB" 2>"$ERR_FILE" \
+    || { grep -q TimeoutException "$ERR_FILE" || { cat "$ERR_FILE" >&2; exit 1; }; }; } \
+  | { grep -F "$TAB" || true; } \
   | tee "$COUNT_FILE" \
   | kubectl -n "$NS" exec -i kafka-0 -- "$KAFKA_BIN/kafka-console-producer.sh" \
       --bootstrap-server "$BOOTSTRAP" --topic "$SRC" \

@@ -51,8 +51,15 @@ public final class TestEnvironment {
         return text("name", "local");
     }
 
-    /** Base URL of a service, e.g. {@code http://localhost:8081}. */
+    /**
+     * Base URL of a service, e.g. {@code http://localhost:8081}. {@code -Dservice.<name>.url=...} overrides the file,
+     * for a run that reaches the services some other way (a NodePort, a tunnel) without a new environment file.
+     */
     public String serviceUrl(String service) {
+        String override = System.getProperty("service." + service + ".url");
+        if (override != null && !override.isBlank()) {
+            return override;
+        }
         JsonNode url = json.path("services").path(service);
         if (!url.isString()) {
             throw new IllegalStateException("no URL for service '" + service + "' in environment " + name());

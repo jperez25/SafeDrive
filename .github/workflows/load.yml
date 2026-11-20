@@ -1,0 +1,73 @@
+# Gatling load tests against the real stack on minikube. Manual: Actions tab, "Load tests", then pick what to run.
+# Kept out of ci.yml on purpose: a load run is slower and its numbers only mean something when you compare runs.
+name: Load tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      simulation:
+        description: Simulation to run
+        type: choice
+        options: [all, ingest, e2e, duplicates]
+        default: all
+      profile:
+        description: Load profile (rates are in integration-tests/load LoadProfile)
+        type: choice
+        options: [smoke, baseline, stress]
+        default: smoke
+      mode:
+        description: How the load reaches the services
+        type: choice
+        options: [incluster, nodeport]
+        default: incluster
+
+permissions:
+  contents: read
+
+jobs:
+  load:
+    name: ${{ inputs.simulation }} / ${{ inputs.profile }} / ${{ inputs.mode }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: "25"
+          cache: maven
+      - uses: medyagh/setup-minikube@v0.0.19
+        with:
+          cpus: 2
+          memory: 6144m
+      - name: Deploy
+        run: |
+          platform/scripts/deploy.sh infra
+          for svc in telemetry-ingest trip-processor scoring policy-rating; do
+            platform/scripts/deploy.sh "$svc"
+          done
+      # On the runner the node IP is reachable, so nodeport mode uses the NodePorts directly (no tunnel).
+      - name: Run the simulations
+        env:
+          SIMULATION: ${{ inputs.simulation }}
+          PROFILE: ${{ inputs.profile }}
+          MODE: ${{ inputs.mode }}
+        run: platform/scripts/load.sh "$SIMULATION" "$PROFILE" --mode "$MODE"
+      - name: Cluster state and service logs
+        if: failure()
+        run: |
+          kubectl -n safedrive get pods -o wide
+          kubectl -n safedrive top pods || true
+          for svc in telemetry-ingest trip-processor scoring policy-rating; do
+            echo "::group::$svc"; kubectl -n safedrive logs "deployment/$svc" --tail=200 || true; echo "::endgroup::"
+          done
+      - name: Upload Gatling reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gatling-${{ inputs.profile }}-${{ inputs.mode }}
+          path: |
+            integration-tests/load/target/gatling
+            integration-tests/load/target/gatling-cluster
+          if-no-files-found: warn
+          retention-days: 30

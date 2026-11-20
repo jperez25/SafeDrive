@@ -8,7 +8,8 @@
 platform/
   infra/      Kafka (single-node KRaft) and Postgres manifests
   services/   one deploy manifest per service
-  scripts/    deploy.sh, replay-dlt.sh, port-forward.sh
+  scripts/    deploy.sh, replay-dlt.sh, port-forward.sh, load.sh
+  load/       load pod and NodePort manifests used by load.sh
 ```
 
 ## Infra

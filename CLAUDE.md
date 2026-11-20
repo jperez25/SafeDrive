@@ -19,6 +19,7 @@ TestNG, REST Assured, Allure, Pact. Root package: `com.qnt.safedrive`.
 - Unit tests: `./mvnw test`
 - Integration tests: `./mvnw -pl integration-tests/<module> -am test -Dsuite=smoke -Denv=<env>` (`-am` builds `core` first; modules: telemetry-ingest, trip-processor, scoring, policy-rating; needs `platform/scripts/port-forward.sh`)
 - Deploy: `platform/scripts/deploy.sh all|<service>|infra`, plus `down` and `status`
+- Load tests: `platform/scripts/load.sh <ingest|e2e|duplicates|all> [smoke|baseline|stress] [--mode incluster|nodeport|portforward]` (default in-cluster, see `docs/architecture/test-platform.md`)
 - Replay dead letters: `platform/scripts/replay-dlt.sh <topic>.<group>.dlt`
 
 ## Rules

@@ -1,0 +1,14 @@
+{
+  "name": "cluster",
+  "services": {
+    "telemetry-ingest": "http://telemetry-ingest:8080",
+    "trip-processor": "http://trip-processor:8080",
+    "scoring": "http://scoring:8080",
+    "policy-rating": "http://policy-rating:8080"
+  },
+  "namespace": "safedrive",
+  "kafkaBootstrapServers": "kafka:9092",
+  "waitTimeoutSeconds": 60,
+  "pollMillis": 500,
+  "contractsDir": "../../docs/contracts/events"
+}

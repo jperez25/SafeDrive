@@ -9,6 +9,6 @@
 - Spring Boot 4.x only. Do not add Spring Boot 3.x dependencies or starters.
 - Jackson 3+ only (`tools.jackson.*`: `tools.jackson.databind.json.JsonMapper`, `tools.jackson.core`). Never use Jackson 2 (`com.fasterxml.jackson.databind` / `com.fasterxml.jackson.core`) and never add the Spring Boot Jackson 2 compatibility module.
 - Exception: the Jackson annotations package stays `com.fasterxml.jackson.annotation` (Jackson 3 still uses it). Nothing else under `com.fasterxml.jackson` is allowed.
-- Exception: `integration-tests` may have Jackson 2 on its classpath, only because `allure-generator` (the report builder) needs it. Test code still uses Jackson 3 only. `commons` and services keep the ban.
+- Exception: `integration-tests` may have Jackson 2 on its classpath, only because `allure-generator` (the report builder) and Gatling (`integration-tests/load`) need it. Test code still uses Jackson 3 only. `commons` and services keep the ban.
 - Test libraries (REST Assured, Pact, etc.) must be configured to use the Jackson 3 mapper; check transitive dependencies (`mvn dependency:tree`) so Jackson 2 does not leak in.
 - Use `JsonMapper` (built via builder, one shared instance from Spring), not `new ObjectMapper()`.
