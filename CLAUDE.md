@@ -6,7 +6,7 @@ The test platform is the main deliverable; services stay thin. See `docs/design/
 
 ## Layout
 - `commons/` shared lib (event envelope, correlation ID, config). No business logic.
-- `services/{telemetry-ingest,trip-processor,scoring,policy-rating,rewards}/` one service, one job.
+- `services/{telemetry-ingest,trip-processor,scoring,policy-rating,rewards,claims}/` one service, one job.
 - `integration-tests/` black-box tests (`core` shared models/clients/validators, one dir per service, `e2e` full end-to-end flow).
 - `docs/{contracts,architecture,design}/`, `platform/{infra,services,scripts}/`, `simulator/`.
 
@@ -17,7 +17,7 @@ TestNG, REST Assured, Allure, Pact. Root package: `com.qnt.safedrive`.
 ## Commands (placeholders)
 - Build: `./mvnw clean install` (Maven wrapper, no system Maven needed)
 - Unit tests: `./mvnw test`
-- Integration tests: `./mvnw -pl integration-tests/<module> -am test -Dsuite=smoke -Denv=<env>` (`-am` builds `core` first; modules: telemetry-ingest, trip-processor, scoring, policy-rating, rewards; needs `platform/scripts/port-forward.sh`)
+- Integration tests: `./mvnw -pl integration-tests/<module> -am test -Dsuite=smoke -Denv=<env>` (`-am` builds `core` first; modules: telemetry-ingest, trip-processor, scoring, policy-rating, rewards, claims; needs `platform/scripts/port-forward.sh`)
 - Deploy: `platform/scripts/deploy.sh all|<service>|infra`, plus `down` and `status`
 - Load tests: `platform/scripts/load.sh <ingest|e2e|duplicates|all> [smoke|baseline|stress] [--mode incluster|nodeport|portforward]` (default in-cluster, see `docs/architecture/test-platform.md`)
 - Replay dead letters: `platform/scripts/replay-dlt.sh <topic>.<group>.dlt`

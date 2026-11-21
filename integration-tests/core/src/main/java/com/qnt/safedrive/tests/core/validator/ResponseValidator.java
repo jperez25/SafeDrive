@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.qnt.safedrive.tests.core.model.IngestResponse;
 import com.qnt.safedrive.tests.core.model.PremiumResponse;
+import com.qnt.safedrive.tests.core.model.ClaimsResponse;
 import com.qnt.safedrive.tests.core.model.RewardsResponse;
 import com.qnt.safedrive.tests.core.model.ScoreResponse;
 import com.qnt.safedrive.tests.core.model.constants.Http;
@@ -76,6 +77,18 @@ public class ResponseValidator {
     @Step("Validate rewards body")
     public RewardsBodyValidator rewardsBody() {
         return new RewardsBodyValidator(parse(RewardsResponse.class));
+    }
+
+    /** The claims API body of a driver: the driver's claims, newest first (an empty list when there are none). */
+    @Step("Validate claims body")
+    public ClaimsBodyValidator claimsBody() {
+        return new ClaimsBodyValidator(parse(ClaimsResponse.class));
+    }
+
+    /** The claims API body of one claim. */
+    @Step("Validate claim body")
+    public ClaimBodyValidator claimBody() {
+        return new ClaimBodyValidator(parse(ClaimsResponse.Claim.class));
     }
 
     <B> B parse(Class<B> type) {

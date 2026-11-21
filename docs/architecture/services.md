@@ -187,9 +187,11 @@ cross-service flows and eventual consistency get tested.
 - Failures: unreadable or wrong-contract events go straight to `<topic>.claims.dlt` (`driving.event.claims.dlt`, `premium.adjusted.claims.dlt`);
   anything else (database down) is retried 3 times with backoff first. Replay: `platform/scripts/replay-dlt.sh <topic>.claims.dlt`.
 - API (port 8086):
-  - `GET /v1/drivers/{driverId}/claims` returns `{driverId, claims: [{claimId, tripId, status, severity, crashAt, lat, lon, policyScoreVersion, createdAt}]}`, newest first; an unknown driver gets an empty list (200).
-  - `GET /v1/claims/{claimId}` returns one claim, 404 if unknown.
+  - `GET /v1/drivers/{driverId}/claims` returns `{driverId, claims: [{claimId, driverId, tripId, status, severity, crashAt, lat, lon, policyScoreVersion, createdAt}]}`, newest first; an unknown driver gets an empty list (200).
+  - `GET /v1/claims/{claimId}` returns one claim (same shape), 404 if unknown, 400 if the ID is not a UUID.
   - Correlation ID in and out through `X-Correlation-Id`; no PII in logs.
+- As built: `driving.event` and `premium.adjusted` are handled in one transaction each, both taking `pg_advisory_xact_lock` on the driver, so a crash and a
+  policy handled at the same moment cannot miss each other. Metric `safedrive.claims.opened` (tag `severity`). Each service has its own schema `claims` and user `claims`.
 - Test focus: crash to claim end to end, non-crash events ignored, duplicate crash gives one claim, crash before policy then policy arrives
   (`pending_policy` to `opened`), stale policy ignored, dead letter and replay, API 200/404.
 

@@ -17,6 +17,7 @@
     <module>services/scoring</module>
     <module>services/policy-rating</module>
     <module>services/rewards</module>
+    <module>services/claims</module>
     <module>integration-tests</module>
   </modules>
 

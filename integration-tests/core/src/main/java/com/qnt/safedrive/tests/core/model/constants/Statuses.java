@@ -21,5 +21,9 @@ public final class Statuses {
     public static final String REWARD_PENDING = "pending";
     public static final String REWARD_NOTIFIED = "notified";
 
+    /** The {@code status} of a claim: opened with the driver's policy, or waiting because the policy was not known yet. */
+    public static final String CLAIM_OPENED = "opened";
+    public static final String CLAIM_PENDING_POLICY = "pending_policy";
+
     public static final String HEALTH_UP = "UP";
 }

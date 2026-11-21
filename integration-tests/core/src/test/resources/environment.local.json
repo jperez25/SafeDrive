@@ -6,6 +6,7 @@
     "scoring": "http://localhost:8083",
     "policy-rating": "http://localhost:8084",
     "rewards": "http://localhost:8085",
+    "claims": "http://localhost:8086",
     "notification-mock": "http://localhost:8089"
   },
   "namespace": "safedrive",

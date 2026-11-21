@@ -102,6 +102,22 @@ parallel tests never interfere, and each stub is removed in cleanup.
 
 Run: `./mvnw -pl integration-tests/rewards -am test -Dsuite=master -Denv=local` (needs `port-forward.sh`, which forwards `rewards` on 8085 and the mock on 8089).
 
+## Claims tests (`integration-tests/claims`)
+
+Tests put `driving.event` and `premium.adjusted` events straight on their topics (keyed by driver, built by `DrivingEventFactory`
+and `PremiumAdjustedFactory`), so each test controls the crash, the policy and their order. The two topics have no order between
+them, so every assertion on a claim is eventual: it waits for the status it expects (`opened` or `pending_policy`).
+
+| Feature | Covers |
+|---|---|
+| Health | liveness and readiness (smoke) |
+| Crash claims | crash opens a claim with trip evidence and policy version (smoke); crash before the policy waits as `pending_policy` then opens; later policy does not change an opened claim; severity kept; crash and policy at the same moment never leave a claim waiting; non-crash kinds open nothing; stale policy ignored; another driver's policy does not open a claim |
+| Idempotency | duplicate event ID, same crash under a new event ID, duplicate while waiting for the policy, late duplicate |
+| Claims API | list per driver, one claim by ID, correlation ID, empty list for an unknown driver (200), 404 for an unknown claim, 400 for a malformed ID |
+| Dead letter and replay | unreadable events on both topics, wrong type or version, invalid crash payloads, partition not blocked, log line without payload, replay |
+
+Run: `./mvnw -pl integration-tests/claims -am test -Dsuite=master -Denv=local` (needs `port-forward.sh`, which forwards `claims` on 8086).
+
 ## E2E tests (`integration-tests/e2e`)
 
 Tests drive only the edge (`POST /v1/telemetry/batches`) and follow one correlation ID across `trip.raw`,

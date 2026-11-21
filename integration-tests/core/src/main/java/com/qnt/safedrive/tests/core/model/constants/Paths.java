@@ -18,6 +18,14 @@ public final class Paths {
         return "/v1/drivers/" + driverId + "/rewards";
     }
 
+    public static String driverClaims(String driverId) {
+        return "/v1/drivers/" + driverId + "/claims";
+    }
+
+    public static String claim(String claimId) {
+        return "/v1/claims/" + claimId;
+    }
+
     public static final String HEALTH = "/actuator/health";
     public static final String HEALTH_LIVENESS = "/actuator/health/liveness";
     public static final String HEALTH_READINESS = "/actuator/health/readiness";

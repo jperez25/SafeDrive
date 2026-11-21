@@ -30,6 +30,7 @@ data:
     create_service scoring "$SCORING_DB_PASSWORD"
     create_service rating  "$RATING_DB_PASSWORD"
     create_service rewards "$REWARDS_DB_PASSWORD"
+    create_service claims  "$CLAIMS_DB_PASSWORD"
 
     # Local admin login to inspect every schema (superuser, dev only).
     psql -v ON_ERROR_STOP=1 -v pw="$SAFEDRIVER_DB_PASSWORD" --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<'SQL'

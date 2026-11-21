@@ -1,6 +1,7 @@
 package com.qnt.safedrive.tests.core.factory;
 
 import com.qnt.safedrive.tests.core.model.Batch;
+import com.qnt.safedrive.tests.core.model.DrivingEvent;
 import com.qnt.safedrive.tests.core.model.Envelope;
 import com.qnt.safedrive.tests.core.model.PremiumAdjusted;
 import com.qnt.safedrive.tests.core.model.ScoreUpdated;
@@ -46,6 +47,21 @@ public final class EnvelopeFactory {
                 .correlationId(correlationId)
                 .source(Services.SCORING)
                 .payload(Json.MAPPER.valueToTree(score))
+                .build();
+    }
+
+    /** A {@code driving.event} as trip-processor would publish it; each call gets a new event ID. */
+    public static Envelope aDrivingEventEvent(DrivingEvent event, String correlationId) {
+        Instant now = Instant.now();
+        return Envelope.builder()
+                .eventId(Ids.event())
+                .type(EventTypes.DRIVING_EVENT)
+                .version(1)
+                .occurredAt(event.timestamp() != null ? event.timestamp() : now.toString())
+                .producedAt(now.toString())
+                .correlationId(correlationId)
+                .source(Services.TRIP_PROCESSOR)
+                .payload(Json.MAPPER.valueToTree(event))
                 .build();
     }
 

@@ -29,6 +29,8 @@ spec:
                 driving.event.scoring.dlt
                 score.updated.policy-rating.dlt
                 premium.adjusted.rewards.dlt
+                driving.event.claims.dlt
+                premium.adjusted.claims.dlt
               )
               for t in "${TOPICS[@]}"; do
                 /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$BOOTSTRAP" \

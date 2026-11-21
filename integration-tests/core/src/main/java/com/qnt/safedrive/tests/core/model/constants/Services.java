@@ -10,6 +10,7 @@ public final class Services {
     public static final String SCORING = "scoring";
     public static final String POLICY_RATING = "policy-rating";
     public static final String REWARDS = "rewards";
+    public static final String CLAIMS = "claims";
     /** The mocked external notification provider (WireMock) that rewards calls. */
     public static final String NOTIFICATION_MOCK = "notification-mock";
 }

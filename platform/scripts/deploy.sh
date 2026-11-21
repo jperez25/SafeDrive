@@ -10,7 +10,7 @@ INFRA_DIR="$ROOT/platform/infra"
 SERVICES_DIR="$ROOT/platform/services"
 MON_DIR="$ROOT/platform/monitoring"
 NS=safedrive
-SERVICES=(telemetry-ingest trip-processor scoring policy-rating notification-mock rewards)
+SERVICES=(telemetry-ingest trip-processor scoring policy-rating notification-mock rewards claims)
 TIMEOUT=240s
 
 log() { printf '==> %s\n' "$*"; }
@@ -41,6 +41,7 @@ load_env() {
   : "${SCORING_DB_PASSWORD:=changeme}"
   : "${RATING_DB_PASSWORD:=changeme}"
   : "${REWARDS_DB_PASSWORD:=changeme}"
+  : "${CLAIMS_DB_PASSWORD:=changeme}"
   : "${SAFEDRIVER_DB_PASSWORD:=changeme}"
 }
 
@@ -53,6 +54,7 @@ apply_secrets() {
     --from-literal=SCORING_DB_PASSWORD="$SCORING_DB_PASSWORD" \
     --from-literal=RATING_DB_PASSWORD="$RATING_DB_PASSWORD" \
     --from-literal=REWARDS_DB_PASSWORD="$REWARDS_DB_PASSWORD" \
+    --from-literal=CLAIMS_DB_PASSWORD="$CLAIMS_DB_PASSWORD" \
     --from-literal=SAFEDRIVER_DB_PASSWORD="$SAFEDRIVER_DB_PASSWORD" \
     --dry-run=client -o yaml | kubectl apply -f - >/dev/null
 }

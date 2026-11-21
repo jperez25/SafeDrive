@@ -22,6 +22,8 @@ data:
             labels: { service: policy-rating }
           - targets: ["rewards:8080"]
             labels: { service: rewards }
+          - targets: ["claims:8080"]
+            labels: { service: claims }
       - job_name: kafka
         static_configs:
           - targets: ["kafka-exporter:9308"]

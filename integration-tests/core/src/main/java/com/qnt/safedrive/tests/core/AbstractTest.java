@@ -5,6 +5,7 @@ import com.qnt.safedrive.tests.core.model.constants.Services;
 import com.qnt.safedrive.tests.core.client.KafkaPublisher;
 import com.qnt.safedrive.tests.core.client.NotificationMockClient;
 import com.qnt.safedrive.tests.core.client.PremiumClient;
+import com.qnt.safedrive.tests.core.client.ClaimsClient;
 import com.qnt.safedrive.tests.core.client.RewardsClient;
 import com.qnt.safedrive.tests.core.client.ScoringClient;
 import com.qnt.safedrive.tests.core.client.TelemetryIngestClient;
@@ -43,6 +44,10 @@ public abstract class AbstractTest {
 
     protected RewardsClient rewardsClient() {
         return new RewardsClient(env.serviceUrl(Services.REWARDS));
+    }
+
+    protected ClaimsClient claimsClient() {
+        return new ClaimsClient(env.serviceUrl(Services.CLAIMS));
     }
 
     protected NotificationMockClient notificationMock() {

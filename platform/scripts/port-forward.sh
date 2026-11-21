@@ -4,7 +4,7 @@
 #   port-forward.sh down     kills all port-forwards of the safedrive namespace (also -down / --down), for stale ones
 # Services that are not deployed yet (scoring, policy-rating) are skipped. Override the service and Postgres local ports with env vars.
 #
-# Default local ports: telemetry-ingest 8081, trip-processor 8082, scoring 8083, policy-rating 8084, rewards 8085, notification-mock 8089,
+# Default local ports: telemetry-ingest 8081, trip-processor 8082, scoring 8083, policy-rating 8084, rewards 8085, claims 8086, notification-mock 8089,
 #                      grafana 3000, prometheus 9090, postgres 5432, kafka 9094.
 # Kafka note: the broker has a second listener (EXTERNAL, advertised as localhost:9094), so a Kafka client on the
 # host can consume and produce through this forward.
@@ -63,6 +63,7 @@ forward svc/trip-processor   "${TRIP_PORT:-8082}" 8080
 forward svc/scoring          "${SCORING_PORT:-8083}" 8080
 forward svc/policy-rating    "${RATING_PORT:-8084}" 8080
 forward svc/rewards          "${REWARDS_PORT:-8085}" 8080
+forward svc/claims           "${CLAIMS_PORT:-8086}" 8080
 forward svc/notification-mock "${NOTIFICATION_MOCK_PORT:-8089}" 8080
 forward svc/grafana          "${GRAFANA_PORT:-3000}" 3000
 forward svc/prometheus       "${PROMETHEUS_PORT:-9090}" 9090

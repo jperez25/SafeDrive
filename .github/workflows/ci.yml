@@ -28,7 +28,7 @@ env:
   SUITE: ${{ inputs.suite || 'master' }}
   TEST_ENV: ci
   # Modules of the black-box tests; core is built through -am.
-  TEST_MODULES: integration-tests/telemetry-ingest,integration-tests/trip-processor,integration-tests/scoring,integration-tests/policy-rating,integration-tests/rewards,integration-tests/e2e
+  TEST_MODULES: integration-tests/telemetry-ingest,integration-tests/trip-processor,integration-tests/scoring,integration-tests/policy-rating,integration-tests/rewards,integration-tests/claims,integration-tests/e2e
 
 jobs:
   unit:
@@ -44,7 +44,7 @@ jobs:
           cache: maven
       # Not a plain `./mvnw test`: from the root it would also start the black-box suites.
       - name: Unit and contract tests (also enforces the Jackson 3 rule)
-        run: ./mvnw -B -ntp -pl commons,services/telemetry-ingest,services/trip-processor,services/scoring,services/policy-rating,services/rewards,integration-tests/core -am verify
+        run: ./mvnw -B -ntp -pl commons,services/telemetry-ingest,services/trip-processor,services/scoring,services/policy-rating,services/rewards,services/claims,integration-tests/core -am verify
 
   integration:
     name: Deploy to minikube and run ${{ inputs.suite || 'master' }}
@@ -68,7 +68,7 @@ jobs:
         run: platform/scripts/deploy.sh infra
       - name: 3. Deploy services
         run: |
-          for svc in telemetry-ingest trip-processor scoring policy-rating notification-mock rewards; do
+          for svc in telemetry-ingest trip-processor scoring policy-rating notification-mock rewards claims; do
             platform/scripts/deploy.sh "$svc"
           done
           platform/scripts/deploy.sh status
@@ -87,7 +87,7 @@ jobs:
         if: failure()
         run: |
           kubectl -n safedrive get pods -o wide
-          for svc in telemetry-ingest trip-processor scoring policy-rating notification-mock rewards; do
+          for svc in telemetry-ingest trip-processor scoring policy-rating notification-mock rewards claims; do
             echo "::group::$svc"; kubectl -n safedrive logs "deployment/$svc" --tail=300 || true; echo "::endgroup::"
           done
       - name: 7. Upload Allure reports and surefire output

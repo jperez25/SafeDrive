@@ -1,6 +1,6 @@
 # SafeDrive: Plan
 
-> Status: APPROVED. Phases 1 to 5 are built; phase 6 (`rewards`, `claims`) is in progress. Live progress per phase: `status.md`.
+> Status: APPROVED. Phases 1 to 6 are built. Live progress per phase: `status.md`.
 
 ## 1. Goal
 
@@ -104,7 +104,7 @@ Allure, Pact (contracts, unit-level), k6 or Gatling (load), GitHub Actions (CI).
 4. Failure-mode tests: duplicates, out-of-order, late data, poison events, dead-letter and replay are covered per service
    and in `e2e`. **Partly done:** outages (pod or Kafka down) and idle-timeout closing are still to do; the `simulator` is not built.
 5. Observability, load tests, CI. **Done** (provisional load thresholds, Toxiproxy still to do).
-6. Phase 2 services: `rewards` (done), then `claims` (design written, `trip-processor` crash detection built, service next).
+6. Phase 2 services: `rewards` (done), `claims` (done). **Done.**
 
 ## 9. Decisions
 
