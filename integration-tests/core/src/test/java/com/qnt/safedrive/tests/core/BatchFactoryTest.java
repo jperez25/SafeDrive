@@ -66,12 +66,20 @@ public class BatchFactoryTest {
         Batch calm = BatchFactory.aBatch();
         for (Batch batch : new Batch[] {
             BatchFactory.aMediumBrakeBatch(), BatchFactory.aHardBrakeBatch(),
-            BatchFactory.aSpeedingBatch(), BatchFactory.aCrashBatch()
+            BatchFactory.aSpeedingBatch()
         }) {
             assertThat(batch.samples()).hasSize(calm.samples().size());
             assertThat(batch.samples().stream().filter(s -> s.accelerationMetersPerSecondSquared() != 0.0
                             || s.speedKilometersPerHour() != 50.0)).hasSize(1);
         }
+    }
+
+    @Test
+    public void crashBatchStopsAtTheImpactAndStaysStopped() {
+        var samples = BatchFactory.aCrashBatch().samples();
+        assertThat(samples.get(1).speedKilometersPerHour()).isEqualTo(50.0);
+        assertThat(samples.get(2).accelerationMetersPerSecondSquared()).isLessThan(-20.0);
+        assertThat(samples.subList(2, samples.size())).allMatch(s -> s.speedKilometersPerHour() == 0.0);
     }
 
     @Test

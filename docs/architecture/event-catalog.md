@@ -26,9 +26,9 @@ The Kafka message key is chosen per topic to guarantee ordering where it matters
 |---|---|---|---|---|
 | `trip.raw` | `tripId` | `telemetry-ingest` | `trip-processor` | Validated batch of samples |
 | `trip.completed` | `driverId` | `trip-processor` | `scoring` | Trip summary, one per closed trip (revision aware) |
-| `driving.event` | `driverId` | `trip-processor` | `scoring`, `claims` (P2) | Hard brake, harsh accel, speeding, distraction, crash |
+| `driving.event` | `driverId` | `trip-processor` | `scoring`, `claims` (P2) | Hard brake, harsh accel, speeding, distraction, crash (a crash replaces the `hard_brake` of the same impact) |
 | `score.updated` | `driverId` | `scoring` | `policy-rating` | New risk score for a driver |
-| `premium.adjusted` | `driverId` | `policy-rating` | `rewards` (P2); `claims` (P2, planned) | New premium or discount |
+| `premium.adjusted` | `driverId` | `policy-rating` | `rewards` (P2); `claims` (P2) | New premium or discount |
 | `<topic>.<consumer-group>.dlt` | original key | any consumer | replay tool | Unprocessable events |
 
 Locally: 3 partitions per topic, replication factor 1.

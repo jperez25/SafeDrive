@@ -104,7 +104,7 @@ Allure, Pact (contracts, unit-level), k6 or Gatling (load), GitHub Actions (CI).
 4. Failure-mode tests: duplicates, out-of-order, late data, poison events, dead-letter and replay are covered per service
    and in `e2e`. **Partly done:** outages (pod or Kafka down) and idle-timeout closing are still to do; the `simulator` is not built.
 5. Observability, load tests, CI. **Done** (provisional load thresholds, Toxiproxy still to do).
-6. Phase 2 services: `rewards` (in progress), then `claims`.
+6. Phase 2 services: `rewards` (done), then `claims` (design written, `trip-processor` crash detection built, service next).
 
 ## 9. Decisions
 

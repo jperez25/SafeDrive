@@ -4,6 +4,7 @@ import static com.qnt.safedrive.tests.core.factory.BatchFactory.aBatch;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.qnt.safedrive.tests.core.model.Batch;
+import com.qnt.safedrive.tests.core.model.constants.DrivingEventKinds;
 import com.qnt.safedrive.tests.core.model.constants.Groups;
 import com.qnt.safedrive.tests.core.utils.Ids;
 import com.qnt.safedrive.tests.core.validator.Validator;
@@ -56,5 +57,19 @@ public class DrivingEventsNegativeTest extends AbstractDrivingEventsTest {
         Batch batch = withSample(aBatch(), EVENT_INDEX, s -> s.withSpeedKilometersPerHour(100.0).withPhoneInUse(false));
 
         assertNoDrivingEvents(batch);
+    }
+
+    @Test(groups = Groups.REGRESSION, description = "A hard brake that keeps moving (no stop) is a hard brake, not a crash")
+    @Story("No false alarms")
+    public void hardBrakeWithoutAStopIsNotACrash() {
+        Batch batch = withSample(aBatch(), EVENT_INDEX, s -> s.withAccelerationMetersPerSecondSquared(-35.0));
+        String correlationId = Ids.correlation();
+        ingest(batch, correlationId);
+
+        Validator.with(awaitTripCompleted(batch, correlationId, 1))
+                .envelope()
+                .tripCompletedPayload()
+                .hasEventCount(DrivingEventKinds.HARD_BRAKE, 1)
+                .hasEventCount(DrivingEventKinds.CRASH, 0);
     }
 }

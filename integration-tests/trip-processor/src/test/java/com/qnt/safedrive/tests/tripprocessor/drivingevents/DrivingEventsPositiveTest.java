@@ -1,6 +1,8 @@
 package com.qnt.safedrive.tests.tripprocessor.drivingevents;
 
 import static com.qnt.safedrive.tests.core.factory.BatchFactory.aBatch;
+import static com.qnt.safedrive.tests.core.factory.BatchFactory.aCrashBatch;
+import static com.qnt.safedrive.tests.core.factory.BatchFactory.crashIn;
 import static com.qnt.safedrive.tests.core.factory.BatchFactory.aDistractedBatch;
 import static com.qnt.safedrive.tests.core.factory.BatchFactory.aHarshAccelerationBatch;
 import static com.qnt.safedrive.tests.core.factory.BatchFactory.aHardBrakeBatch;
@@ -198,5 +200,37 @@ public class DrivingEventsPositiveTest extends AbstractDrivingEventsTest {
         assertThat(drivingEventsFor(first, correlationId))
                 .extracting(m -> m.envelope().payloadText("kind"))
                 .containsExactlyInAnyOrder(DrivingEventKinds.SPEEDING, DrivingEventKinds.HARD_BRAKE);
+    }
+
+    @Test(groups = Groups.SMOKE, description = "A sudden stop from speed is published as one crash, and the same impact is not also a hard brake")
+    @Story("Crash")
+    public void crashIsDetected() {
+        Batch batch = aCrashBatch();
+        String correlationId = Ids.correlation();
+
+        TopicReader.Message event = theOnlyEventOf(batch, correlationId, DrivingEventKinds.CRASH);
+
+        assertDrivingEvent(event, batch, correlationId)
+                .hasKind(DrivingEventKinds.CRASH)
+                .hasSeverity(Severities.MEDIUM)
+                .isStampedWith(batch.samples().get(EVENT_INDEX));
+    }
+
+    @Test(groups = Groups.REGRESSION, description = "A late batch carrying a crash revises the trip with the crash counted once")
+    @Story("Crash")
+    public void crashInALateBatchIsPublishedOnce() {
+        Batch first = aBatch();
+        Batch late = crashIn(nextOf(first));
+        String correlationId = Ids.correlation();
+        ingest(first, correlationId);
+        awaitTripCompleted(first, correlationId, 1);
+
+        ingest(late, correlationId);
+
+        Validator.with(awaitTripCompleted(first, correlationId, 2))
+                .envelope()
+                .tripCompletedPayload()
+                .hasEventCount(DrivingEventKinds.CRASH, 1);
+        assertThat(drivingEventsFor(first, correlationId)).hasSize(1);
     }
 }

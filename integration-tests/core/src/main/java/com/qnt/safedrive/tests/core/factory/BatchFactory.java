@@ -92,9 +92,19 @@ public final class BatchFactory {
         return batch.withSamples(samples);
     }
 
-    /** A cruise batch ending in a sudden stop: speed to zero with a crash-level deceleration. */
+    /** A cruise batch with a crash at sample 2: crash-level deceleration to zero, and the vehicle stays stopped. */
     public static Batch aCrashBatch() {
-        return withEvent(aBatch(), 0.0, CRASH_ACCELERATION);
+        return crashIn(aBatch());
+    }
+
+    /** The batch with a crash at sample 2: crash-level deceleration to zero, then stopped for the rest of the batch. */
+    public static Batch crashIn(Batch batch) {
+        Batch crashed = withEvent(batch, 0.0, CRASH_ACCELERATION);
+        List<Sample> samples = new ArrayList<>(crashed.samples());
+        for (int i = EVENT_INDEX + 1; i < samples.size(); i++) {
+            samples.set(i, samples.get(i).withSpeedKilometersPerHour(0.0));
+        }
+        return crashed.withSamples(samples);
     }
 
     /** Replaces one sample of the batch, keeping its timestamp so ordering stays valid. */

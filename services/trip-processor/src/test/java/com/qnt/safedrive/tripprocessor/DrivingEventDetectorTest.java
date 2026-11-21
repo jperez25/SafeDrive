@@ -74,4 +74,69 @@ class DrivingEventDetectorTest {
         var events = DrivingEventDetector.detect(List.of(at(0, 125, 0, false), at(1, 50, -6, false)));
         assertThat(events).extracting(Detected::kind).containsExactly(Kind.speeding, Kind.hard_brake);
     }
+
+    @Test
+    void crashIsSuddenDecelerationFollowedByAStop() {
+        var events = DrivingEventDetector.detect(List.of(
+                at(0, 90, 0, false), at(1, 90, 0, false), at(2, 0, -20, false), at(3, 0, 0, false), at(4, 0, 0, false)));
+        assertThat(events).filteredOn(e -> e.kind() == Kind.crash).singleElement().satisfies(e -> {
+            assertThat(e.severity()).isEqualTo(Severity.high);
+            assertThat(e.ts()).isEqualTo(Samples.T0.plusSeconds(2));
+        });
+    }
+
+    @Test
+    void crashReplacesTheHardBrakeOfTheSameImpact() {
+        var events = DrivingEventDetector.detect(List.of(
+                at(0, 90, 0, false), at(1, 0, -20, false), at(2, 0, 0, false)));
+        assertThat(events).extracting(Detected::kind).containsExactly(Kind.crash);
+    }
+
+    @Test
+    void crashSeverityFollowsSpeedBeforeImpact() {
+        assertThat(crashSeverity(30)).isEqualTo(Severity.low);
+        assertThat(crashSeverity(60)).isEqualTo(Severity.medium);
+        assertThat(crashSeverity(100)).isEqualTo(Severity.high);
+    }
+
+    private static Severity crashSeverity(double speed) {
+        return DrivingEventDetector.detect(List.of(at(0, speed, 0, false), at(1, 0, -20, false), at(2, 0, 0, false)))
+                .stream().filter(e -> e.kind() == Kind.crash).findFirst().orElseThrow().severity();
+    }
+
+    @Test
+    void hardBrakeThatKeepsMovingIsNotACrash() {
+        var events = DrivingEventDetector.detect(List.of(
+                at(0, 90, 0, false), at(1, 40, -8, false), at(2, 35, 0, false), at(3, 40, 0, false)));
+        assertThat(events).extracting(Detected::kind).doesNotContain(Kind.crash);
+    }
+
+    @Test
+    void stopThatDoesNotLastTheWholeWindowIsNotACrash() {
+        var events = DrivingEventDetector.detect(List.of(
+                at(0, 90, 0, false), at(1, 0, -20, false), at(2, 0, 0, false), at(5, 30, 2, false)));
+        assertThat(events).extracting(Detected::kind).doesNotContain(Kind.crash);
+    }
+
+    @Test
+    void normalStopIsNotACrash() {
+        var events = DrivingEventDetector.detect(List.of(
+                at(0, 50, 0, false), at(1, 30, -3, false), at(2, 10, -3, false), at(3, 0, -2, false), at(4, 0, 0, false)));
+        assertThat(events).extracting(Detected::kind).doesNotContain(Kind.crash);
+    }
+
+    @Test
+    void consecutiveImpactSamplesAreOneCrash() {
+        var events = DrivingEventDetector.detect(List.of(
+                at(0, 90, 0, false), at(1, 40, -16, false), at(2, 0, -20, false), at(3, 0, 0, false)));
+        assertThat(events).filteredOn(e -> e.kind() == Kind.crash).hasSize(1);
+    }
+
+    @Test
+    void tripEndingAtImpactIsACrashOnlyIfStopped() {
+        assertThat(DrivingEventDetector.detect(List.of(at(0, 90, 0, false), at(1, 0, -20, false))))
+                .extracting(Detected::kind).contains(Kind.crash);
+        assertThat(DrivingEventDetector.detect(List.of(at(0, 90, 0, false), at(1, 50, -20, false))))
+                .extracting(Detected::kind).doesNotContain(Kind.crash);
+    }
 }

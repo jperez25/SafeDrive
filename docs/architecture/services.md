@@ -44,7 +44,7 @@ Consumes `trip.raw`, builds trips, detects driving events.
 
 **Features**
 - Assemble samples into trips, including late and out-of-order batches.
-- Detect driving events: hard brake, harsh acceleration, speeding, distraction.
+- Detect driving events: hard brake, harsh acceleration, speeding, distraction, crash.
 - Publish `driving.event` and `trip.completed`. Idempotent on event ID.
 - Dead-letter topic for unprocessable events, with replay.
 - Health and readiness endpoints.
@@ -60,7 +60,13 @@ Consumes `trip.raw`, builds trips, detects driving events.
 - One transaction per message: `processed_events`, trip row lock, batch insert, and the outbox rows for the results.
 - Detection runs over the whole assembled trip. Consecutive samples breaking the same rule are one event, stamped with
   the first sample of the run and the worst severity (`DrivingEventDetector` holds the thresholds). Table `driving_events`
-  records what was already published, so a revision only emits events that are new. `crash` is not detected yet (claims, P2).
+  records what was already published, so a revision only emits events that are new.
+- Crash (`DrivingEventDetector`, for `claims`): a sudden deceleration followed by a stop. The impact sample has a speed drop of at least
+  40 km/h from the previous sample, or an acceleration at or below -15 m/s2, and every sample in the next 10 s is below 5 km/h
+  (a trip that ends at the impact counts if that sample is below 5 km/h). A brake that keeps moving is a `hard_brake`, not a crash.
+  The event is stamped with the impact sample; severity is the speed before the impact (`low` below 50 km/h, `medium` from 50, `high` from 80).
+  Consecutive impact samples are one crash. The impact sample also breaks the hard-brake rule, so the crash replaces that `hard_brake`
+  (one impact is not scored twice; `scoring` still weights `crash` at 25). `eventCounts` of `trip.completed` now includes `crash`.
 - Idle timeout: `TRIP_IDLE_TIMEOUT_S` (default 300) closes a trip whose last batch is missing or has a gap.
 - `trip.completed` carries cumulative `eventCounts` for every revision.
 - Failures: unreadable or wrong-contract events go straight to `trip.raw.trip-processor.dlt` (retrying cannot help);
@@ -153,15 +159,39 @@ so it is where retries, duplicates and outages get tested.
 - Mocked provider: WireMock deployment `notification-mock` in `platform/services/notification-mock` (decided). It accepts every
   notification with `202` by default. Tests read what it received and inject failures through its admin API (`/__admin`).
 
-## claims (P2, not designed yet)
+## claims (P2)
 
 Why: claims modernization. Technically it correlates events from several services, so it is where
 cross-service flows and eventual consistency get tested.
 
-- Detect a crash from `driving.event` (`kind: crash`, emitted by `trip-processor`).
-- Open a first notice of loss (FNOL) and attach trip evidence.
-- Know the driver's policy and expose claim status over HTTP.
-- Decided: gets the policy by consuming `premium.adjusted` and keeping its own copy (no service-to-service HTTP).
+**Features**
+- Detect a crash from `driving.event` (`kind: crash`, emitted by `trip-processor`) and open a first notice of loss (FNOL).
+- Attach the trip evidence the event carries (trip, time, position, severity, correlation ID).
+- Know the driver's policy by consuming `premium.adjusted` and keeping its own copy (decided: no service-to-service HTTP).
+- Expose claim status over HTTP.
+- Idempotent on duplicates, dead-letter with replay, health and readiness endpoints.
+
+**Design**
+- Consumes `driving.event` (every kind is read, only `crash` opens a claim; the others are ignored) and `premium.adjusted`.
+  Publishes no event (leaf service, so no outbox), like `rewards`. Consumer group `claims` on both topics.
+- DB (schema `claims`, user `claims`): `policies(driver_id PK, score_version, base_premium, new_premium, band, updated_at)`,
+  `claims(claim_id UUID PK, driver_id, trip_id, crash_ts, severity, lat, lon, correlation_id, status, policy_score_version, created_at, updated_at)`,
+  unique on `(trip_id, crash_ts)`, and `processed_events`.
+- Policy copy: upserted from `premium.adjusted` only if `scoreVersion` is higher than the stored one (stale and duplicate events are ignored).
+- Crash: one transaction inserts the claim with `ON CONFLICT (trip_id, crash_ts) DO NOTHING`, so a duplicate, a replay or the same crash
+  under a new event ID finds the same row. Status:
+  - `opened`: the driver's policy copy exists; `policy_score_version` records which version was current.
+  - `pending_policy`: no policy copy yet. `premium.adjusted` and `driving.event` are different topics with no ordering between them,
+    so the crash can arrive first. When the policy arrives, the driver's `pending_policy` claims move to `opened` in the same transaction.
+- Claims are never deleted or downgraded; later states (review, closed) are out of scope for now.
+- Failures: unreadable or wrong-contract events go straight to `<topic>.claims.dlt` (`driving.event.claims.dlt`, `premium.adjusted.claims.dlt`);
+  anything else (database down) is retried 3 times with backoff first. Replay: `platform/scripts/replay-dlt.sh <topic>.claims.dlt`.
+- API (port 8086):
+  - `GET /v1/drivers/{driverId}/claims` returns `{driverId, claims: [{claimId, tripId, status, severity, crashAt, lat, lon, policyScoreVersion, createdAt}]}`, newest first; an unknown driver gets an empty list (200).
+  - `GET /v1/claims/{claimId}` returns one claim, 404 if unknown.
+  - Correlation ID in and out through `X-Correlation-Id`; no PII in logs.
+- Test focus: crash to claim end to end, non-crash events ignored, duplicate crash gives one claim, crash before policy then policy arrives
+  (`pending_policy` to `opened`), stale policy ignored, dead letter and replay, API 200/404.
 
 ## commons
 
