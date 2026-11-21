@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SafeDrive Platform Overview</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --panel: #ffffff; --ink: #1c2430; --muted: #5b6678; --line: #8a94a6; --border: #d5dae3;
+    --svc: #e3efff; --svc-b: #3b7ddd;
+    --topic: #fff3d6; --topic-b: #c98a00;
+    --ext: #eceff4; --ext-b: #7b8597;
+    --test: #e6f6ea; --test-b: #2f9e55;
+    --infra: #f1e9fb; --infra-b: #8456c8;
+    --dlt: #fde8e8; --dlt-b: #d04545;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161d; --panel: #1a2029; --ink: #e6eaf0; --muted: #9aa5b8; --line: #6f7b90; --border: #2d3646;
+      --svc: #1b2f4d; --svc-b: #5a9bf0;
+      --topic: #3a2f10; --topic-b: #e0a52a;
+      --ext: #232a36; --ext-b: #8591a6;
+      --test: #173523; --test-b: #4cc47a;
+      --infra: #2c2142; --infra-b: #a583e0;
+      --dlt: #3d1c1c; --dlt-b: #ee7070;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161d; --panel: #1a2029; --ink: #e6eaf0; --muted: #9aa5b8; --line: #6f7b90; --border: #2d3646;
+    --svc: #1b2f4d; --svc-b: #5a9bf0;
+    --topic: #3a2f10; --topic-b: #e0a52a;
+    --ext: #232a36; --ext-b: #8591a6;
+    --test: #173523; --test-b: #4cc47a;
+    --infra: #2c2142; --infra-b: #a583e0;
+    --dlt: #3d1c1c; --dlt-b: #ee7070;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  h2 { margin: 32px 0 8px; font-size: 18px; }
+  p.lead { margin: 0 0 16px; color: var(--muted); }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px; overflow-x: auto; }
+  svg { display: block; min-width: 900px; width: 100%; height: auto; }
+  svg text { fill: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .t-title { font-size: 13px; font-weight: 600; }
+  .t-sub { font-size: 10.5px; fill: var(--muted); }
+  .t-topic { font-size: 10.5px; }
+  .t-note { font-size: 11px; fill: var(--muted); }
+  .t-head { font-size: 12px; font-weight: 700; letter-spacing: .04em; fill: var(--muted); }
+  .box-svc { fill: var(--svc); stroke: var(--svc-b); stroke-width: 1.5; }
+  .box-ext { fill: var(--ext); stroke: var(--ext-b); stroke-width: 1.5; }
+  .box-test { fill: var(--test); stroke: var(--test-b); stroke-width: 1.5; }
+  .box-infra { fill: var(--infra); stroke: var(--infra-b); stroke-width: 1.5; }
+  .pill { fill: var(--topic); stroke: var(--topic-b); stroke-width: 1.2; }
+  .flow { stroke: var(--line); stroke-width: 1.6; fill: none; }
+  .flow-dash { stroke: var(--test-b); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+  .zone { fill: none; stroke: var(--border); stroke-width: 1.2; stroke-dasharray: 6 4; }
+  .dlt { fill: var(--dlt); stroke: var(--dlt-b); stroke-width: 1.2; }
+  .arrow { fill: var(--line); }
+  .arrow-test { fill: var(--test-b); }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: 0; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+  .scroll { overflow-x: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 2px 0; color: var(--muted); font-size: 13px; }
+  .legend span::before { content: ""; display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1.5px solid; }
+  .l-svc::before { background: var(--svc); border-color: var(--svc-b); }
+  .l-topic::before { background: var(--topic); border-color: var(--topic-b); }
+  .l-test::before { background: var(--test); border-color: var(--test-b); }
+  .l-infra::before { background: var(--infra); border-color: var(--infra-b); }
+  .l-dlt::before { background: var(--dlt); border-color: var(--dlt-b); }
+</style>
+</head>
+<body>
+<main>
+  <h1>SafeDrive platform overview</h1>
+  <p class="lead">Six event-driven services on Kafka and Postgres, deployed to minikube, surrounded by a black-box test platform. Telemetry enters at the edge; score, premium, reward and claim come out.</p>
+
+  <div class="card">
+  <svg viewBox="0 0 1160 640" role="img" aria-label="SafeDrive service and event flow diagram, with the test platform and infrastructure">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="arrow" d="M0 0 L10 5 L0 10 z"/></marker>
+      <marker id="aht" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="arrow-test" d="M0 0 L10 5 L0 10 z"/></marker>
+    </defs>
+
+    <text class="t-head" x="20" y="18">RUNTIME: KUBERNETES NAMESPACE ON MINIKUBE</text>
+
+    <!-- client -->
+    <rect class="box-ext" x="20" y="34" width="120" height="44" rx="8"/>
+    <text class="t-title" x="80" y="53" text-anchor="middle">Telemetry client</text>
+    <text class="t-sub" x="80" y="68" text-anchor="middle">device, tests, load</text>
+    <path class="flow" d="M80 78 V120" marker-end="url(#ah)"/>
+    <text class="t-note" x="90" y="104">POST /v1/telemetry/batches</text>
+
+    <!-- services row -->
+    <g>
+      <rect class="box-svc" x="20" y="120" width="120" height="70" rx="8"/>
+      <text class="t-title" x="80" y="144" text-anchor="middle">telemetry-ingest</text>
+      <text class="t-sub" x="80" y="160" text-anchor="middle">:8081 · schema ingest</text>
+      <text class="t-sub" x="80" y="175" text-anchor="middle">validate, dedupe</text>
+
+      <rect class="box-svc" x="270" y="120" width="120" height="70" rx="8"/>
+      <text class="t-title" x="330" y="144" text-anchor="middle">trip-processor</text>
+      <text class="t-sub" x="330" y="160" text-anchor="middle">:8082 · schema trip</text>
+      <text class="t-sub" x="330" y="175" text-anchor="middle">trips, driving events</text>
+
+      <rect class="box-svc" x="520" y="120" width="120" height="70" rx="8"/>
+      <text class="t-title" x="580" y="144" text-anchor="middle">scoring</text>
+      <text class="t-sub" x="580" y="160" text-anchor="middle">:8083 · schema scoring</text>
+      <text class="t-sub" x="580" y="175" text-anchor="middle">rolling risk score</text>
+
+      <rect class="box-svc" x="770" y="120" width="120" height="70" rx="8"/>
+      <text class="t-title" x="830" y="144" text-anchor="middle">policy-rating</text>
+      <text class="t-sub" x="830" y="160" text-anchor="middle">:8084 · schema rating</text>
+      <text class="t-sub" x="830" y="175" text-anchor="middle">score band to premium</text>
+
+      <rect class="box-svc" x="1020" y="120" width="120" height="70" rx="8"/>
+      <text class="t-title" x="1080" y="144" text-anchor="middle">rewards</text>
+      <text class="t-sub" x="1080" y="160" text-anchor="middle">:8085 · schema rewards</text>
+      <text class="t-sub" x="1080" y="175" text-anchor="middle">safe-driver bonus</text>
+    </g>
+
+    <!-- main flow arrows with topic pills -->
+    <path class="flow" d="M140 155 H270" marker-end="url(#ah)"/>
+    <path class="flow" d="M390 155 H520" marker-end="url(#ah)"/>
+    <path class="flow" d="M640 155 H770" marker-end="url(#ah)"/>
+    <path class="flow" d="M890 155 H1020" marker-end="url(#ah)"/>
+    <g class="mono">
+      <rect class="pill" x="152" y="144" width="106" height="22" rx="11"/>
+      <text class="t-topic" x="205" y="159" text-anchor="middle">trip.raw</text>
+      <rect class="pill" x="402" y="144" width="106" height="22" rx="11"/>
+      <text class="t-topic" x="455" y="159" text-anchor="middle">trip.completed</text>
+      <rect class="pill" x="652" y="144" width="106" height="22" rx="11"/>
+      <text class="t-topic" x="705" y="159" text-anchor="middle">score.updated</text>
+      <rect class="pill" x="902" y="144" width="106" height="22" rx="11"/>
+      <text class="t-topic" x="955" y="159" text-anchor="middle">premium.adjusted</text>
+    </g>
+
+    <!-- driving.event to claims -->
+    <path class="flow" d="M330 190 V330 H650" marker-end="url(#ah)"/>
+    <g class="mono">
+      <rect class="pill" x="410" y="319" width="106" height="22" rx="11"/>
+      <text class="t-topic" x="463" y="334" text-anchor="middle">driving.event</text>
+    </g>
+    <!-- premium.adjusted to claims -->
+    <path class="flow" d="M830 190 V330 H770" marker-end="url(#ah)"/>
+    <g class="mono">
+      <rect class="pill" x="777" y="236" width="106" height="22" rx="11"/>
+      <text class="t-topic" x="830" y="251" text-anchor="middle">premium.adjusted</text>
+    </g>
+
+    <!-- claims -->
+    <rect class="box-svc" x="650" y="298" width="120" height="64" rx="8"/>
+    <text class="t-title" x="710" y="322" text-anchor="middle">claims</text>
+    <text class="t-sub" x="710" y="338" text-anchor="middle">:8086 · schema claims</text>
+    <text class="t-sub" x="710" y="353" text-anchor="middle">crash to claim</text>
+
+    <!-- notification mock -->
+    <path class="flow" d="M1080 190 V298" marker-end="url(#ah)"/>
+    <text class="t-note" x="1072" y="250" text-anchor="end">POST /v1/notifications</text>
+    <rect class="box-ext" x="1020" y="298" width="120" height="64" rx="8"/>
+    <text class="t-title" x="1080" y="322" text-anchor="middle">notification-mock</text>
+    <text class="t-sub" x="1080" y="338" text-anchor="middle">WireMock, external</text>
+    <text class="t-sub" x="1080" y="353" text-anchor="middle">provider stand-in</text>
+
+    <!-- notes under services -->
+    <text class="t-note" x="20" y="226">trip.raw keyed by tripId; every other topic keyed by driverId. Read APIs: score, premium, rewards, claims.</text>
+    <text class="t-note" x="20" y="244">Every event: envelope with eventId + correlationId, transactional outbox on publish, idempotent consumers.</text>
+
+    <!-- DLT strip -->
+    <rect class="dlt" x="20" y="384" width="1120" height="34" rx="8"/>
+    <text class="t-note" x="580" y="405" text-anchor="middle" style="fill:var(--ink)">Every consumer: retry 3x with backoff, then &lt;topic&gt;.&lt;group&gt;.dlt, then replay with platform/scripts/replay-dlt.sh (envelope intact)</text>
+
+    <!-- Infra and monitoring -->
+    <rect class="box-infra" x="20" y="438" width="540" height="56" rx="8"/>
+    <text class="t-title" x="36" y="458">Kafka (single-node KRaft) · Postgres</text>
+    <text class="t-sub" x="36" y="475">One database, one schema and one DB user per service. 3 partitions per topic, replication factor 1.</text>
+    <text class="t-sub" x="36" y="488">Credentials from Kubernetes Secrets built from a gitignored .env.</text>
+
+    <rect class="box-infra" x="580" y="438" width="560" height="56" rx="8"/>
+    <text class="t-title" x="596" y="458">Monitoring</text>
+    <text class="t-sub" x="596" y="475">kafka-exporter, Prometheus (/actuator/prometheus on every service), Grafana "SafeDrive pipeline".</text>
+    <text class="t-sub" x="596" y="488">Consumer lag, published events and dead letters per topic.</text>
+
+    <text class="t-head" x="20" y="524">TEST PLATFORM: BLACK-BOX, OUTSIDE THE CLUSTER (VIA port-forward.sh) OR IN A POD (LOAD)</text>
+    <rect class="zone" x="12" y="532" width="1136" height="98" rx="10"/>
+
+    <rect class="box-test" x="24" y="542" width="196" height="78" rx="8"/>
+    <text class="t-title" x="122" y="562" text-anchor="middle">Unit + contract tests</text>
+    <text class="t-sub" x="122" y="579" text-anchor="middle">./mvnw test</text>
+    <text class="t-sub" x="122" y="593" text-anchor="middle">JSON Schema events, examples</text>
+    <text class="t-sub" x="122" y="607" text-anchor="middle">Jackson 3 enforced</text>
+
+    <rect class="box-test" x="236" y="542" width="236" height="78" rx="8"/>
+    <text class="t-title" x="354" y="562" text-anchor="middle">Per-service suites</text>
+    <text class="t-sub" x="354" y="579" text-anchor="middle">ingest · trip · scoring · rating · rewards · claims</text>
+    <text class="t-sub" x="354" y="593" text-anchor="middle">smoke gates regression</text>
+    <text class="t-sub" x="354" y="607" text-anchor="middle">REST Assured, Kafka client, log tracer</text>
+
+    <rect class="box-test" x="488" y="542" width="196" height="78" rx="8"/>
+    <text class="t-title" x="586" y="562" text-anchor="middle">e2e</text>
+    <text class="t-sub" x="586" y="579" text-anchor="middle">ingest to score, premium, claim</text>
+    <text class="t-sub" x="586" y="593" text-anchor="middle">follows one correlation ID</text>
+    <text class="t-sub" x="586" y="607" text-anchor="middle">duplicate, late, poison cases</text>
+
+    <rect class="box-test" x="700" y="542" width="196" height="78" rx="8"/>
+    <text class="t-title" x="798" y="562" text-anchor="middle">Load (Gatling)</text>
+    <text class="t-sub" x="798" y="579" text-anchor="middle">ingest, e2e latency, duplicates</text>
+    <text class="t-sub" x="798" y="593" text-anchor="middle">smoke · baseline · stress</text>
+    <text class="t-sub" x="798" y="607" text-anchor="middle">load.sh, in-cluster by default</text>
+
+    <rect class="box-test" x="912" y="542" width="224" height="78" rx="8"/>
+    <text class="t-title" x="1024" y="562" text-anchor="middle">Reports and CI</text>
+    <text class="t-sub" x="1024" y="579" text-anchor="middle">Allure HTML built in-process</text>
+    <text class="t-sub" x="1024" y="593" text-anchor="middle">GitHub Actions: ci.yml, load.yml</text>
+    <text class="t-sub" x="1024" y="607" text-anchor="middle">minikube on the runner</text>
+
+    <!-- dashed link from tests up to runtime -->
+    <path class="flow-dash" d="M354 542 V510 H110 V498" marker-end="url(#aht)"/>
+    <text class="t-note" x="240" y="526" style="fill:var(--test-b)">HTTP, topics, logs</text>
+  </svg>
+  </div>
+  <div class="legend">
+    <span class="l-svc">service</span>
+    <span class="l-topic">Kafka topic</span>
+    <span class="l-infra">infrastructure</span>
+    <span class="l-test">test platform</span>
+    <span class="l-dlt">failure path</span>
+  </div>
+
+  <h2>Event flow</h2>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Topic</th><th>Producer</th><th>Consumers</th><th>Carries</th></tr></thead>
+    <tbody>
+      <tr><td><code>trip.raw</code></td><td>telemetry-ingest</td><td>trip-processor</td><td>Validated batch of samples</td></tr>
+      <tr><td><code>trip.completed</code></td><td>trip-processor</td><td>scoring</td><td>Trip summary and event counts, revision aware</td></tr>
+      <tr><td><code>driving.event</code></td><td>trip-processor</td><td>claims</td><td>Hard brake, harsh acceleration, speeding, distraction, crash</td></tr>
+      <tr><td><code>score.updated</code></td><td>scoring</td><td>policy-rating</td><td>Driver risk score, monotonic <code>scoreVersion</code></td></tr>
+      <tr><td><code>premium.adjusted</code></td><td>policy-rating</td><td>rewards, claims</td><td>Band, base premium, adjustment, new premium</td></tr>
+      <tr><td><code>&lt;topic&gt;.&lt;group&gt;.dlt</code></td><td>any consumer</td><td>replay-dlt.sh</td><td>Unprocessable events with the failure reason</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Reading the diagram</h2>
+  <p class="lead">Source of truth: <code>docs/architecture/services.md</code>, <code>event-catalog.md</code>, <code>platform.md</code> and <code>test-platform.md</code>. <code>scoring</code> reads only <code>trip.completed</code>: the summary already carries the event counts, so it does not consume <code>driving.event</code>. <code>rewards</code> and <code>claims</code> are leaf services and publish nothing.</p>
+</main>
+</body>
+</html>
