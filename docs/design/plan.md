@@ -1,6 +1,6 @@
 # SafeDrive: Plan
 
-> Status: APPROVED. Phase 1 can start.
+> Status: APPROVED. Phases 1 to 5 are built; phase 6 (`rewards`, `claims`) is in progress. Live progress per phase: `status.md`.
 
 ## 1. Goal
 
@@ -98,12 +98,13 @@ Allure, Pact (contracts, unit-level), k6 or Gatling (load), GitHub Actions (CI).
 
 ## 8. Phases
 
-1. Foundations: parent pom, `commons`, event envelope, contracts, deploy of infra.
-2. Vertical slice: `telemetry-ingest` → `trip-processor` with health endpoints and first tests.
-3. `scoring` and `policy-rating`, e2e flow.
-4. Failure-mode tests.
-5. Observability, load tests, CI.
-6. Phase 2 services: `rewards`, `claims`.
+1. Foundations: parent pom, `commons`, event envelope, contracts, deploy of infra. **Done.**
+2. Vertical slice: `telemetry-ingest` → `trip-processor` with health endpoints and first tests. **Done.**
+3. `scoring` and `policy-rating`, e2e flow. **Done.**
+4. Failure-mode tests: duplicates, out-of-order, late data, poison events, dead-letter and replay are covered per service
+   and in `e2e`. **Partly done:** outages (pod or Kafka down) and idle-timeout closing are still to do; the `simulator` is not built.
+5. Observability, load tests, CI. **Done** (provisional load thresholds, Toxiproxy still to do).
+6. Phase 2 services: `rewards` (in progress), then `claims`.
 
 ## 9. Decisions
 
@@ -118,4 +119,6 @@ Decided:
 - Phase 2: `rewards` and `claims` consume `premium.adjusted`; `claims` detects crashes from `driving.event` (`kind: crash`). No service-to-service HTTP.
 - Test tracing helper uses logs and topics only, no DB reads.
 
-Still open: which module owns the mocked notification provider for `rewards` (P2). Nothing else on the app side. The test platform is drafted in `docs/architecture/test-platform.md` and parked until the app side is done.
+- `rewards` notification provider: a WireMock deployment under `platform/services/notification-mock` (no code, tests read the received calls and inject failures through its admin API).
+
+Nothing else is open on the app side. The test platform is described in `docs/architecture/test-platform.md`.

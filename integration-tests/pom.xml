@@ -21,6 +21,7 @@
     <module>trip-processor</module>
     <module>scoring</module>
     <module>policy-rating</module>
+    <module>rewards</module>
     <module>e2e</module>
     <module>load</module>
   </modules>

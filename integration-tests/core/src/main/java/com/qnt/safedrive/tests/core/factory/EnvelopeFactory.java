@@ -2,6 +2,7 @@ package com.qnt.safedrive.tests.core.factory;
 
 import com.qnt.safedrive.tests.core.model.Batch;
 import com.qnt.safedrive.tests.core.model.Envelope;
+import com.qnt.safedrive.tests.core.model.PremiumAdjusted;
 import com.qnt.safedrive.tests.core.model.ScoreUpdated;
 import com.qnt.safedrive.tests.core.model.TripCompleted;
 import com.qnt.safedrive.tests.core.model.constants.EventTypes;
@@ -45,6 +46,21 @@ public final class EnvelopeFactory {
                 .correlationId(correlationId)
                 .source(Services.SCORING)
                 .payload(Json.MAPPER.valueToTree(score))
+                .build();
+    }
+
+    /** A {@code premium.adjusted} event as policy-rating would publish it; each call gets a new event ID. */
+    public static Envelope aPremiumAdjustedEvent(PremiumAdjusted premium, String correlationId) {
+        Instant now = Instant.now();
+        return Envelope.builder()
+                .eventId(Ids.event())
+                .type(EventTypes.PREMIUM_ADJUSTED)
+                .version(1)
+                .occurredAt(now.toString())
+                .producedAt(now.toString())
+                .correlationId(correlationId)
+                .source(Services.POLICY_RATING)
+                .payload(Json.MAPPER.valueToTree(premium))
                 .build();
     }
 

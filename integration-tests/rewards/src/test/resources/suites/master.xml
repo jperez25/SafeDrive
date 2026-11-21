@@ -1,0 +1,11 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<!-- Smoke first, then regression. SmokeGateListener skips every regression test if a smoke test fails. -->
+<suite name="rewards master">
+  <listeners>
+    <listener class-name="com.qnt.safedrive.tests.core.listener.SmokeGateListener"/>
+  </listeners>
+  <suite-files>
+    <suite-file path="smoke.xml"/>
+    <suite-file path="regression.xml"/>
+  </suite-files>
+</suite>

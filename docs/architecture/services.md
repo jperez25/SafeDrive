@@ -120,16 +120,38 @@ Consumes `score.updated`, adjusts the premium.
 - Failures: unreadable or wrong-contract events (including a score outside 0-100) go straight to `score.updated.policy-rating.dlt`; anything else is retried 3 times first.
 - API: `GET /v1/drivers/{driverId}/premium` returns the current rating, 404 until a score was applied.
 
-## rewards (P2, not designed yet)
+## rewards (P2)
 
 Why: risk mitigation, rewarding good drivers. Technically a leaf consumer with an external dependency,
 so it is where retries, duplicates and outages get tested.
 
-- Consume score or premium events and decide whether a reward applies.
-- Send a notification through an external provider (mocked).
+**Features**
+- Consume `premium.adjusted` and decide whether a reward applies.
+- Notify the driver through an external provider (mocked).
 - No double rewards on duplicate events. Retry with backoff. Dead-letter on permanent failure.
-- Decided: consumes `premium.adjusted`.
-- **Open:** which module owns the mock provider (`simulator` or a small mock under `platform`).
+- Expose a driver's rewards over HTTP.
+- Health and readiness endpoints.
+
+**Design**
+- Consumes `premium.adjusted` only. Publishes no event (leaf service, so no outbox).
+- Rule: a reward applies when the band is `excellent`. Kind `safe_driver_bonus`. At most one reward per `(driverId, scoreVersion)`.
+  Any other band: no reward, no notification.
+- DB: `rewards(reward_id UUID PK, driver_id, score_version, kind, status, attempts, created_at, notified_at)`, unique on
+  `(driver_id, score_version)`. Status is `pending` then `notified`.
+- Idempotency is the unique key, not an event ID table: a duplicate event, a late duplicate or the same score under a new event ID
+  all find the same row. Pending rows are (re)notified, notified rows are left alone.
+- Flow per message: (1) insert the reward row if new (own transaction); (2) if it is `pending`, call the provider outside any
+  transaction; (3) on success mark it `notified`. A failure between 2 and 3 can notify twice, so the call carries the reward ID as
+  `Idempotency-Key` and the provider dedupes on it (at-least-once, like every hop).
+- Provider call: `POST {NOTIFICATION_URL}/v1/notifications` with `{rewardId, driverId, kind}` (no PII, see `docs/contracts/notification-provider.md`),
+  timeout 2 s (`NOTIFICATION_TIMEOUT_MS`). The correlation ID travels in the `X-Correlation-Id` header.
+- Failures: a provider `5xx`, `429` or timeout is retried 3 times with backoff, then dead-lettered to `premium.adjusted.rewards.dlt`.
+  A provider `4xx` (not `429`) cannot succeed, so it is dead-lettered at once. Unreadable or wrong-contract events are dead-lettered at once.
+  The reward row stays `pending` after a dead letter, so a replay (`replay-dlt.sh premium.adjusted.rewards.dlt`) notifies it once the provider is back.
+- Stale or out-of-order scores: a reward for an older `scoreVersion` is still valid (it was earned), so there is no ordering check.
+- API: `GET /v1/drivers/{driverId}/rewards` returns `{driverId, rewards: [{rewardId, scoreVersion, kind, status, createdAt, notifiedAt}]}`; an unknown driver gets an empty list (200).
+- Mocked provider: WireMock deployment `notification-mock` in `platform/services/notification-mock` (decided). It accepts every
+  notification with `202` by default. Tests read what it received and inject failures through its admin API (`/__admin`).
 
 ## claims (P2, not designed yet)
 

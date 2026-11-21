@@ -17,10 +17,13 @@ platform/
 - **Kafka:** single-node KRaft StatefulSet, no Strimzi. Topics from `event-catalog.md` are created by a
   one-shot job (3 partitions, replication factor 1, plus the dead-letter topics).
 - **Postgres:** one instance, one database `safedrive`. An init job creates one schema and one user per
-  service (`ingest`, `trip`, `scoring`, `rating`); each user is granted only its own schema.
+  service (`ingest`, `trip`, `scoring`, `rating`, `rewards`); each user is granted only its own schema.
 - Credentials come from Kubernetes Secrets built from a gitignored `.env`. Local dummy values only.
 
 ## Services
+
+- `notification-mock` is not a SafeDrive service: a WireMock deployment (`platform/services/notification-mock`) that plays the external
+  notification provider for `rewards` (default stub: `202`). It is deployed before `rewards` and has no Dockerfile or database.
 
 - One Deployment and Service per service, config through environment variables.
 - Liveness and readiness probes point at the Actuator health endpoints.
@@ -35,7 +38,7 @@ platform/
 
 ## port-forward.sh
 
-- Forwards `telemetry-ingest` (8081), `trip-processor` (8082), `scoring` (8083), `policy-rating` (8084),
+- Forwards `telemetry-ingest` (8081), `trip-processor` (8082), `scoring` (8083), `policy-rating` (8084), `rewards` (8085), `notification-mock` (8089),
   Postgres (5432) and Kafka (9094) to localhost; runs in the foreground, Ctrl-C stops all. Services that are
   not deployed are skipped. Override ports with `INGEST_PORT`, `TRIP_PORT`, `SCORING_PORT`, `RATING_PORT`,
   `POSTGRES_PORT`, `GRAFANA_PORT`, `PROMETHEUS_PORT`. The Kafka port is fixed at 9094.

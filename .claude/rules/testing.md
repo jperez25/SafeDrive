@@ -32,6 +32,12 @@ paths:
   to look up or re-use an ID keeps it in a local variable and passes it explicitly.
 - Tests must be atomic and parallel-safe: unique data per test, best-effort cleanup.
 - Async assertions use the shared waiter in `core`. Never use `Thread.sleep`.
+- Fetch, wait and check are three separate things. Clients fetch, the shared waiter waits, validators check. A
+  validator only checks a value it was given: it never calls a client, polls or waits. A test helper may fetch and
+  wait (`awaitReward`, `awaitNoMoreRewardsThan`) but returns the value, and the check is a named validator call at
+  the call site: `Validator.with(awaitNoMoreRewardsThan(1, id)).rewardsBody().hasRewardCount(1)`. No helper ends in a
+  bare `assertThat`; a new kind of value gets its validator in `core` (a plain class, `@Step` on every check).
+  For "nothing more happens", the helper watches the window with `waiter.staysEmpty` and then returns the final value.
 - Every point of failure is an Allure step: each public method in `core` that calls a service over HTTP, publishes to or
   reads from Kafka, reads service logs or runs a script (clients, `KafkaPublisher`, `CorrelationTracer`,
   `DeadLetterReplayer`) carries `@Step("<what happens> {param}")`. Put it on the method tests call, not on helpers

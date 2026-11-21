@@ -1,6 +1,7 @@
 # SafeDrive: Test platform
 
-> Status: DRAFT, PARKED. Drafted early; we are finishing the app side first.
+> Status: BUILT for the four core services, e2e, reports, CI and load. Open items: Toxiproxy, pinned load thresholds, outage tests,
+> and the tests of `rewards` and `claims` (phase 2 services).
 
 ## Modules
 
@@ -15,7 +16,7 @@
   `aBatch().withTripId(null)`. Rules: `.claude/rules/testing.md`.
 - `integration-tests/<service>`: black-box tests, one module per service, organized by feature.
 - `integration-tests/e2e`: the full flow from ingest to premium. Special module, not tied to one service.
-- `simulator`: generates trips for N drivers and injects faults (duplicate, out-of-order, late,
+- `simulator` (not built yet; tests and load use the `core` factories meanwhile): generates trips for N drivers and injects faults (duplicate, out-of-order, late,
   malformed, burst). Used by tests and load tests.
 
 ## Run order
@@ -81,6 +82,25 @@ score from `GET /v1/drivers/{driverId}/score`. One driver per test keeps them pa
 | Dead letter and replay | unreadable, wrong type or version, invalid payloads, partition not blocked, replay with `replay-dlt.sh` |
 
 Run: `./mvnw -pl integration-tests/scoring -am test -Dsuite=master -Denv=local` (`-am` builds `core` first).
+
+## Rewards tests (`integration-tests/rewards`)
+
+Tests put `premium.adjusted` events straight on the topic (keyed by driver, built by `PremiumAdjustedFactory`), so each test
+controls the band and score version. They read the rewards from `GET /v1/drivers/{driverId}/rewards` and what the provider
+received from the mock. The provider is WireMock (`notification-mock`): `NotificationMockClient` (core) reads its journal and
+injects failures through the admin API. Every stub and query is scoped to the test's driver ID in the request body, so
+parallel tests never interfere, and each stub is removed in cleanup.
+
+| Feature | Covers |
+|---|---|
+| Health | liveness and readiness (smoke) |
+| Reward granting | excellent earns a reward and a notification (smoke); notification body, `Idempotency-Key` and correlation header; one reward per excellent score version; other bands earn nothing; a worse later band keeps the earned reward |
+| Idempotency | duplicate event ID, same score version under a new event ID, late duplicate |
+| Notification failures | provider 5xx or 429 retried 4 times then dead-lettered (reward stays pending); provider 4xx dead-lettered at once with one call; slow provider counts as down; recovery during retries ends notified; replay after recovery notifies the same reward; a failing reward does not block others |
+| Rewards API | list by score version, empty list for an unknown driver, correlation ID |
+| Dead letter and replay | unreadable, wrong type or version, invalid payloads, partition not blocked, log line without payload, replay |
+
+Run: `./mvnw -pl integration-tests/rewards -am test -Dsuite=master -Denv=local` (needs `port-forward.sh`, which forwards `rewards` on 8085 and the mock on 8089).
 
 ## E2E tests (`integration-tests/e2e`)
 

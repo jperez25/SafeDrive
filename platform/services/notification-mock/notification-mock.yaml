@@ -1,0 +1,66 @@
+# Mocked external notification provider for `rewards` (contract: docs/contracts/notification-provider.md).
+# WireMock, no code. Default stub: every POST /v1/notifications gets 202. Tests read the received calls and
+# inject failures through the admin API (/__admin), e.g. POST /__admin/mappings with a higher priority.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-mock-mappings
+  namespace: safedrive
+data:
+  accept-notifications.json: |
+    {
+      "priority": 10,
+      "request": { "method": "POST", "urlPath": "/v1/notifications" },
+      "response": { "status": 202, "headers": { "Content-Type": "application/json" }, "jsonBody": { "status": "accepted" } }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-mock
+  namespace: safedrive
+spec:
+  selector:
+    app: notification-mock
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-mock
+  namespace: safedrive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-mock
+  template:
+    metadata:
+      labels:
+        app: notification-mock
+    spec:
+      containers:
+        - name: notification-mock
+          image: wiremock/wiremock:3.9.1
+          args: ["--port", "8080", "--disable-banner"]
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: mappings
+              mountPath: /home/wiremock/mappings
+          readinessProbe:
+            httpGet: { path: /__admin/health, port: 8080 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /__admin/health, port: 8080 }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 256Mi }
+            limits: { memory: 512Mi }
+      volumes:
+        - name: mappings
+          configMap:
+            name: notification-mock-mappings

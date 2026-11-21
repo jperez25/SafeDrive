@@ -17,5 +17,9 @@ public final class Statuses {
     /** The {@code status} field of the premium API when no score was applied for the driver yet. */
     public static final String PREMIUM_NOT_FOUND = "not_found";
 
+    /** The {@code status} of a reward: granted but not yet delivered, or delivered to the provider. */
+    public static final String REWARD_PENDING = "pending";
+    public static final String REWARD_NOTIFIED = "notified";
+
     public static final String HEALTH_UP = "UP";
 }

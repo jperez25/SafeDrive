@@ -1,32 +1,33 @@
 # SafeDrive: Status
 
-Last updated: 2026-11-19. Phases are defined in `plan.md` section 8.
+Last updated: 2026-11-20. Phases are defined in `plan.md` section 8.
 
 | # | Phase | Status | Summary |
 |---|---|---|---|
 | 1 | Foundations | Done | Maven wrapper and parent pom (Java 25, Spring Boot 4.1.2, Jackson 3 enforced). `commons` with event envelope, correlation ID and env config. JSON Schema contracts for the envelope and 5 events, with examples and 23 contract tests. Infra on minikube (Colima): Postgres (schema and user per service), single-node KRaft Kafka, 9 topics, `deploy.sh`. Verified on a real cluster. |
 | 2 | Vertical slice | Done | 2.1 `telemetry-ingest` (QNTA-3). 2.2 `trip-processor`: assembles out-of-order and late batches (revisions), detects 4 event kinds, outbox to `trip.completed` and `driving.event`, dead-letter plus `replay-dlt.sh`, 16 unit tests, verified on minikube through the real ingest API. `integration-tests/core` is built (see below); black-box tests for both services are done (see below). |
-| 3 | Scoring and rating | In progress | 3.1 `scoring` (QNTA-7, QNTA-8) done. 3.2 `policy-rating`: service, deploy manifest, 6 unit tests done, verified on minikube (rating, duplicate, stale score, dead letter, 404, readiness); black-box tests done (see below); e2e done (see below). |
-| 4 | Failure-mode tests | Not started | Duplicates, out-of-order, late data, outages, dead-letter and replay. |
+| 3 | Scoring and rating | Done | 3.1 `scoring` (QNTA-7, QNTA-8) done. 3.2 `policy-rating`: service, deploy manifest, 6 unit tests done, verified on minikube (rating, duplicate, stale score, dead letter, 404, readiness); black-box tests done (see below); e2e done (see below). |
+| 4 | Failure-mode tests | Partly done | Duplicates, out-of-order, late data, poison events, dead-letter and replay are covered in the service modules and `e2e`. Still to do: outages (pod or Kafka down), idle-timeout closing, the `simulator`. |
 | 5 | Observability, load, CI | In progress | 5.1 observability done and verified on minikube. 5.2 load tests built (Gatling, in-cluster runner) and verified on smoke; baseline numbers and thresholds still to do. 5.3 CI ran on GitHub: unit, core, ingest and e2e green; the dead-letter replay tests of the three consumers fail (see `replay-dlt.sh`, fix pending). |
-| 6 | Phase 2 services | Not started | `rewards` and `claims` (not designed in detail yet). |
+| 6 | Phase 2 services | In progress | 6.1 `rewards` (QNTA-15) done: service, WireMock provider, manifests, 5 unit tests, 39 black-box tests passing on minikube. 6.2 `claims`: not started (needs `trip-processor` to detect `crash` first). |
 
 ## Other work
 
 | Area | Status | Notes |
 |---|---|---|
 | Design docs | Done | `plan.md` (approved), `architecture/services.md`, `event-catalog.md`, `platform.md`. |
-| Test platform | Drafted, parked | `architecture/test-platform.md`. Implementation waits until the app side is done. |
+| Test platform | Built | `architecture/test-platform.md`: core, per-service modules, e2e, Allure, CI, load. Open: Toxiproxy, pinned load thresholds, outage tests. |
 | `simulator` | Not started | Needed for the failure-mode tests. |
 | `integration-tests/core` | Done | Lombok models (`@With` + `@Builder`), `BatchFactory`, REST clients, `Waiter`, topic/log tracer (`kubectl`, no DB), validators with children (contract schema check), `AbstractTest`. 23 unit tests. Not yet run against the cluster. |
 | `integration-tests/telemetry-ingest` | Done | Fluent validators (`Validator.with(...)`, master and child), constants by concept, 74 tests passing on minikube: health, batch ingest (positive and negative), deduplication (sequential and concurrent), sample validation (limits and partial rejection). `SmokeGateListener` skips regression when smoke fails; `platform/scripts/port-forward.sh` exposes services, Postgres and Kafka. Resilience tests (Kafka or pod down) later. |
 | `integration-tests/trip-processor` | Done | 39 tests passing on minikube: health, trip assembly (multi-batch, out-of-order, late revisions), duplicates, driving-event detection and grouping, dead-letter and replay via `replay-dlt.sh`. Core gained `KafkaPublisher`, `DeadLetterReplayer`, `EnvelopeFactory` and dead-letter/driving-event validators. Idle-timeout closing is not covered yet (needs a short `TRIP_IDLE_TIMEOUT_S`). |
 | `integration-tests/policy-rating` | Done | 43 tests passing on minikube: health, premium API (200/404, correlation ID), band boundaries and no-compounding, score versions (stale, same version, out of order), idempotency, dead-letter and replay via `replay-dlt.sh`. Core gained `PremiumClient`, `ScoreUpdatedFactory`, `aScoreUpdatedEvent`, premium body/payload validators and `Bands`. 54 core unit tests. |
 | `integration-tests/e2e` | Done | 11 tests passing on minikube (wait timeout 60s): happy path (smoke), driver journey (risky trip, two trips averaged and rated from the base, two drivers, rejected batch), correlation (ID created at the edge, in every service log, no device or position data) and pipeline resilience (duplicate, out-of-order, late batch revising score and premium, poison event dead-lettered). Core gained `aSpeedingBatchAfter`. Not covered: pod or Kafka down, idle-timeout closing. |
+| `integration-tests/rewards` | Done | 39 tests passing on minikube: health, reward granting, idempotency, notification failures (5xx, 429, 4xx, slow provider, recovery, replay), rewards API, dead letter and replay. Core gained `RewardsClient`, `NotificationMockClient` (WireMock admin), `PremiumAdjustedFactory`, `aPremiumAdjustedEvent` and the rewards body validator. |
 | Observability (5.1) | Done | Micrometer Prometheus registry in the 4 services, 3 business counters, `platform/monitoring` (kafka-exporter, Prometheus, Grafana with provisioned dashboard), `deploy.sh monitoring`, forwards for Grafana and Prometheus. All scrape targets up, lag visible. Black-box tests of the metrics endpoint not written yet. |
 | CI and reports (5.3) | Done, untested on GitHub | `.github/workflows/ci.yml`: job `unit` (unit and contract tests of commons, services and core, Jackson enforcer) then job `integration` (minikube, `deploy.sh` for infra and the four services, port-forward, suite `master` or the chosen one with `-Denv=ci`, Allure reports and service logs on failure uploaded as artifacts). `environment.ci.json` in every test module (doubled wait timeouts). Reports: `AllureMetadataListener` (core, auto-registered through `META-INF/services`) writes `environment.properties` into the results; `./mvnw -pl integration-tests/<module> allure:report` builds the HTML with the allure-maven 2.18.0 plugin (no CLI install, no Jackson 2 on the project classpath). Verified locally with `-Denv=ci`. |
 | Load tests (5.2) | Built, thresholds provisional | `integration-tests/load` (Gatling 3.16.1; its Jackson 2 is allowed under `integration-tests`): ingest throughput, end-to-end latency (ingest to premium, per-driver SLO) and duplicates under load, profiles `smoke`/`baseline`/`stress`. `platform/scripts/load.sh` runs them in-cluster (pod, no tunnel), through a NodePort (`minikube service` tunnel on macOS) or the port-forward; `.github/workflows/load.yml` runs them in CI on demand. All three pass on smoke in-cluster. `TestEnvironment` accepts `-Dservice.<name>.url` overrides. Toxiproxy, baseline numbers and pinned thresholds still to do. |
 
 ## Open items
 
-- Which module owns the mocked notification provider for `rewards` (phase 6).
+- None on the app side. (`rewards` notification provider decided: WireMock under `platform/services/notification-mock`.)

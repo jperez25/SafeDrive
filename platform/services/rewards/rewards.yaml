@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rewards
+  namespace: safedrive
+spec:
+  selector:
+    app: rewards
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rewards
+  namespace: safedrive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rewards
+  template:
+    metadata:
+      labels:
+        app: rewards
+    spec:
+      containers:
+        - name: rewards
+          image: safedrive/rewards:dev
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: REWARDS_DB_URL
+              value: jdbc:postgresql://postgres:5432/safedrive
+            - name: REWARDS_DB_USER
+              value: rewards
+            - name: REWARDS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: REWARDS_DB_PASSWORD
+            - name: NOTIFICATION_URL
+              value: http://notification-mock:8080
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: kafka:9092
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: 8080 }
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: 8080 }
+            periodSeconds: 5
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 512Mi }

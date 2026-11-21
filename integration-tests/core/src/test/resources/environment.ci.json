@@ -4,7 +4,9 @@
     "telemetry-ingest": "http://localhost:8081",
     "trip-processor": "http://localhost:8082",
     "scoring": "http://localhost:8083",
-    "policy-rating": "http://localhost:8084"
+    "policy-rating": "http://localhost:8084",
+    "rewards": "http://localhost:8085",
+    "notification-mock": "http://localhost:8089"
   },
   "namespace": "safedrive",
   "kafkaBootstrapServers": "localhost:9094",
