@@ -10,7 +10,7 @@ INFRA_DIR="$ROOT/platform/infra"
 SERVICES_DIR="$ROOT/platform/services"
 MON_DIR="$ROOT/platform/monitoring"
 NS=safedrive
-SERVICES=(telemetry-ingest trip-processor scoring policy-rating notification-mock rewards claims)
+SERVICES=(telemetry-ingest trip-processor scoring policy-rating notification-mock rewards claims gateway)
 TIMEOUT=240s
 
 log() { printf '==> %s\n' "$*"; }
@@ -42,6 +42,7 @@ load_env() {
   : "${RATING_DB_PASSWORD:=changeme}"
   : "${REWARDS_DB_PASSWORD:=changeme}"
   : "${CLAIMS_DB_PASSWORD:=changeme}"
+  : "${GATEWAY_DB_PASSWORD:=changeme}"
   : "${SAFEDRIVER_DB_PASSWORD:=changeme}"
 }
 
@@ -55,8 +56,18 @@ apply_secrets() {
     --from-literal=RATING_DB_PASSWORD="$RATING_DB_PASSWORD" \
     --from-literal=REWARDS_DB_PASSWORD="$REWARDS_DB_PASSWORD" \
     --from-literal=CLAIMS_DB_PASSWORD="$CLAIMS_DB_PASSWORD" \
+    --from-literal=GATEWAY_DB_PASSWORD="$GATEWAY_DB_PASSWORD" \
     --from-literal=SAFEDRIVER_DB_PASSWORD="$SAFEDRIVER_DB_PASSWORD" \
     --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+}
+
+# RS256 signing key for the gateway. Created once (kept across deploys so tokens survive a redeploy).
+apply_gateway_key() {
+  kubectl -n "$NS" get secret gateway-jwt >/dev/null 2>&1 && return 0
+  log "gateway: generate JWT signing key"
+  local key
+  key="$(openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 2>/dev/null)"
+  kubectl -n "$NS" create secret generic gateway-jwt --from-literal=GATEWAY_JWT_PRIVATE_KEY="$key" >/dev/null
 }
 
 deploy_infra() {
@@ -110,6 +121,7 @@ deploy_service() {
   local svc="$1"
   has_manifest "$svc" || die "no manifest for '$svc' in platform/services/$svc (service not implemented yet)"
   log "$svc"
+  [[ "$svc" == "gateway" ]] && apply_gateway_key
   build_image "$svc"
   kubectl apply -f "$SERVICES_DIR/$svc"
   kubectl -n "$NS" rollout restart "deployment/$svc" >/dev/null

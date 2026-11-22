@@ -118,6 +118,26 @@ them, so every assertion on a claim is eventual: it waits for the status it expe
 
 Run: `./mvnw -pl integration-tests/claims -am test -Dsuite=master -Denv=local` (needs `port-forward.sh`, which forwards `claims` on 8086).
 
+
+## Gateway tests (`integration-tests/gateway`)
+
+The gateway is a PoC. Only this module goes through it; every other module, e2e and load keep calling the services directly.
+Tests log in as the users seeded by the gateway SQL script (all with the password `safedrive-poc`), so there is no setup.
+`core` gained `GatewayClient`, `LoginFactory`, `Jwts` (reads and forges tokens: tampered, `alg: none`, another key, no signature),
+the token, claims, error, public-key and log-line validators, and the `Scopes`, `GatewayUsers` and `GatewayMessages` constants.
+
+| Feature | Covers |
+|---|---|
+| Health | liveness and readiness (smoke) |
+| Token issuing | login gives a one hour RS256 token (smoke); claims (issuer, audience, user, driver from `X-Driver-Id`, scopes, life); scopes follow the user; public keys verify the token and hold no private part; wrong password, unknown user and disabled user get the same 401 (no user enumeration); SQL injection; missing or blank driver header, missing email, empty password, empty or malformed body give 400 |
+| Token validation | a valid token reaches the service (smoke) and can be reused; no header, wrong scheme, empty bearer, garbage, tampered payload, another key, `alg: none`, no signature and wrong audience all give 401 |
+| Scopes | each of the five scopes opens its routes and reaches the right service; a read-only user is 403 (naming the missing scope) on premium, rewards, claims, one claim and ingest; a refused batch is not forwarded (nothing on `trip.raw`); no ownership check, so a token for one driver reads another (documents the PoC) |
+| Proxy | batch through the gateway is accepted and reaches `trip.raw` with the same correlation ID (smoke); status and body pass through (202, 200 duplicate, 400 invalid, malformed JSON); the correlation ID is kept or created; unknown path 404, actuator not exposed, service paths outside `/api` not served, wrong method 405, body over 1 MB is 413 |
+| Logs | login, rejected login and proxied calls are logged with the correlation ID and without password, token or email |
+
+Not covered: token expiry (needs a short TTL; unit tested in the service) and a service down or slow (502 and 504; unit tested).
+Run: `./mvnw -pl integration-tests/gateway -am test -Dsuite=master -Denv=local` (needs `port-forward.sh`, which forwards `gateway` on 8087).
+
 ## E2E tests (`integration-tests/e2e`)
 
 Tests drive only the edge (`POST /v1/telemetry/batches`) and follow one correlation ID across `trip.raw`,

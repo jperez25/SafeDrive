@@ -24,6 +24,7 @@ client -> telemetry-ingest -> trip.raw -> trip-processor -> trip.completed -> sc
 | `policy-rating` | Score band to premium or discount | 8084 |
 | `rewards` | Safe-driver reward and notification through an external provider | 8085 |
 | `claims` | Open a claim per crash, keep a copy of the driver's policy | 8086 |
+| `gateway` | PoC entry point for the UI: JWT login for seeded drivers, scoped proxy to the services | 8087 |
 
 Principles (full list in `.claude/rules/architecture.md`):
 - Services talk through Kafka; HTTP only at the edges (ingest and read APIs).
@@ -81,7 +82,7 @@ platform/scripts/replay-dlt.sh <topic>.<group>.dlt                           # r
 
 ```
 commons/            shared lib: event envelope, correlation ID, config (no business logic)
-services/           telemetry-ingest, trip-processor, scoring, policy-rating, rewards, claims
+services/           telemetry-ingest, trip-processor, scoring, policy-rating, rewards, claims, gateway
 integration-tests/  core, one module per service, e2e, load
 docs/               contracts (JSON Schema events), architecture, design
 platform/           infra (Kafka, Postgres), services (manifests), monitoring, load, scripts

@@ -1,5 +1,6 @@
 package com.qnt.safedrive.tests.core;
 
+import com.qnt.safedrive.tests.core.client.GatewayClient;
 import com.qnt.safedrive.tests.core.client.HealthClient;
 import com.qnt.safedrive.tests.core.model.constants.Services;
 import com.qnt.safedrive.tests.core.client.KafkaPublisher;
@@ -48,6 +49,10 @@ public abstract class AbstractTest {
 
     protected ClaimsClient claimsClient() {
         return new ClaimsClient(env.serviceUrl(Services.CLAIMS));
+    }
+
+    protected GatewayClient gatewayClient() {
+        return new GatewayClient(env.serviceUrl(Services.GATEWAY));
     }
 
     protected NotificationMockClient notificationMock() {

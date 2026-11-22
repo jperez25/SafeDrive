@@ -30,6 +30,8 @@ The test platform is the main deliverable. The services stay deliberately thin.
 
 Phase 2 (after core is stable): `rewards`, `claims`. See `docs/architecture/services.md`.
 
+Phase 3 (PoC): `gateway`, the single entry point for the UI. JWT login for seeded drivers, scopes per route, proxies to the services over HTTP. Hand-written proxy, no Kafka. The services and all tests stay direct.
+
 ### Other modules
 
 | Module | Purpose |
@@ -105,6 +107,7 @@ Allure, Pact (contracts, unit-level), k6 or Gatling (load), GitHub Actions (CI).
    and in `e2e`. **Partly done:** outages (pod or Kafka down) and idle-timeout closing are still to do; the `simulator` is not built.
 5. Observability, load tests, CI. **Done** (provisional load thresholds, Toxiproxy still to do).
 6. Phase 2 services: `rewards` (done), `claims` (done). **Done.**
+7. `gateway` (PoC): service, JWT and scopes, deploy manifest, unit tests and `integration-tests/gateway` **done**.
 
 ## 9. Decisions
 
@@ -120,5 +123,9 @@ Decided:
 - Test tracing helper uses logs and topics only, no DB reads.
 
 - `rewards` notification provider: a WireMock deployment under `platform/services/notification-mock` (no code, tests read the received calls and inject failures through its admin API).
+
+- `gateway` (PoC, approved): hand-written proxy (Spring Boot MVC and an HTTP client; not Spring Cloud Gateway, to keep the code simple and the Jackson 3 and Boot 4 rules easy to hold). Seeded users only, role driver only, access token only (1 hour, no refresh), scopes per route, no ownership check. All existing tests, e2e and load tests keep calling the services directly; only `integration-tests/gateway` goes through it.
+
+Decided for `gateway`: RS256 (private key from env or a secret); users seeded by an idempotent SQL script into a plain `users` table; the client sends the driver ID in an `X-Driver-Id` header on the token request only and it goes into the token; all other requests are unchanged and the gateway does no driver ownership check.
 
 Nothing else is open on the app side. The test platform is described in `docs/architecture/test-platform.md`.

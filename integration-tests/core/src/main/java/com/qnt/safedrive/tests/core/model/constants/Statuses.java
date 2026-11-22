@@ -25,5 +25,13 @@ public final class Statuses {
     public static final String CLAIM_OPENED = "opened";
     public static final String CLAIM_PENDING_POLICY = "pending_policy";
 
+    /** The {@code status} field of a gateway error body. */
+    public static final String GATEWAY_BAD_REQUEST = "bad_request";
+    public static final String GATEWAY_UNAUTHORIZED = "unauthorized";
+    public static final String GATEWAY_FORBIDDEN = "forbidden";
+    public static final String GATEWAY_NOT_FOUND = "not_found";
+    public static final String GATEWAY_METHOD_NOT_ALLOWED = "method_not_allowed";
+    public static final String GATEWAY_PAYLOAD_TOO_LARGE = "payload_too_large";
+
     public static final String HEALTH_UP = "UP";
 }

@@ -25,6 +25,11 @@ public final class Validator {
         return new RawMessageValidator(message);
     }
 
+    /** Log lines of one service for a request. */
+    public static LogLinesValidator withLogLines(List<com.qnt.safedrive.tests.core.trace.LogReader.Line> lines) {
+        return new LogLinesValidator(lines);
+    }
+
     /** The notifications the mocked provider received (see {@code NotificationMockClient}). */
     public static NotificationsValidator with(List<JsonNode> notifications) {
         return new NotificationsValidator(notifications);

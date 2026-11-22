@@ -11,6 +11,8 @@ public final class Services {
     public static final String POLICY_RATING = "policy-rating";
     public static final String REWARDS = "rewards";
     public static final String CLAIMS = "claims";
+    /** The PoC entry point for the UI (JWT login and scoped proxy). */
+    public static final String GATEWAY = "gateway";
     /** The mocked external notification provider (WireMock) that rewards calls. */
     public static final String NOTIFICATION_MOCK = "notification-mock";
 }

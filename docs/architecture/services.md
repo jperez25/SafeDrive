@@ -195,6 +195,46 @@ cross-service flows and eventual consistency get tested.
 - Test focus: crash to claim end to end, non-crash events ignored, duplicate crash gives one claim, crash before policy then policy arrives
   (`pending_policy` to `opened`), stale policy ignored, dead letter and replay, API 200/404.
 
+## gateway (P3, PoC, entry point for the UI)
+
+Why: a single door for the UI. It authenticates a registered driver, hands out a short-lived JWT with scopes, and
+proxies the UI's calls to the services. It is a proof of concept: the services stay reachable directly, and all
+existing tests, e2e and load tests keep calling them directly.
+
+**Features**
+- Issue an access JWT to a seeded user (login with credentials). No registration (another service does that, later), no refresh token.
+- The token expires after 1 hour; the client asks for a new one when it expires.
+- Check the token and its scope on every call, then proxy to the service. Deny by default.
+- Create the correlation ID at the gateway edge and send it on every downstream call.
+- Health and readiness endpoints.
+
+**Design**
+- Hand-written proxy: Spring Boot MVC and a plain HTTP client. No Spring Cloud Gateway, no reactive stack.
+- Does not use Kafka. Port 8087. Owns schema `gateway` and user `gateway` (users table only).
+- DB (schema `gateway`, user `gateway`): `users(user_id UUID PK, email UNIQUE, password_hash, scopes, status, created_at)` (`scopes` is a space-separated list).
+  A plain, simple table (PoC). Seeded by a SQL script run at startup (idempotent, `INSERT ... ON CONFLICT DO NOTHING`) with a few test drivers; passwords are stored hashed (bcrypt) and never logged.
+  Role: driver only.
+- Token: `POST /v1/auth/token` with `{email, password}` and the driver ID in the `X-Driver-Id` header returns `{accessToken, tokenType: "Bearer", expiresIn: 3600, scope}`.
+  Claims: `iss`, `aud`, `sub` (user ID), `driverId` (from the `X-Driver-Id` header of the token request), `scope`, `iat`, `exp`. Signed with RS256; the private key comes from an env var (a Kubernetes secret in the cluster), never from the repo or the logs. The public key is served at `GET /.well-known/jwks.json`.
+  Wrong credentials or a disabled user get a `401` with the same message (no user enumeration). A missing `X-Driver-Id` gets a `400`.
+- Scopes (each user row lists its scopes; the seed has two full drivers, one `score:read` only user and one disabled user; password for all seeded users: `safedrive-poc`):
+  | Scope | Routes |
+  |---|---|
+  | `telemetry:write` | `POST /api/v1/telemetry/batches` to ingest |
+  | `score:read` | `GET /api/v1/drivers/{driverId}/score` to scoring |
+  | `premium:read` | `GET /api/v1/drivers/{driverId}/premium` to policy-rating |
+  | `rewards:read` | `GET /api/v1/drivers/{driverId}/rewards` to rewards |
+  | `claims:read` | `GET /api/v1/drivers/{driverId}/claims` and `GET /api/v1/claims/{claimId}` to claims |
+- Per request: validate signature, `iss`, `aud` and `exp` (`401` if bad or missing); check the scope for the route (`403` if missing).
+  No ownership check: a valid token with the scope is enough, and the request body and path go to the service unchanged.
+- Proxy: same method, body and status as the service; strips the `Authorization` header downstream (no identity header is added); sets `X-Correlation-Id`.
+  Timeouts per call; a service that is down gives `502`, a timeout gives `504`. No retries (ingest dedupe makes a client retry safe).
+  Request body limit on ingest.
+- Not in the PoC: ownership checks (any valid token can read or post for any driver), refresh and revocation, registration, roles other than driver, rate limiting, TLS, locking the services behind the gateway.
+- Test focus: login (valid, wrong password, unknown user, disabled), token (expired, tampered, wrong audience, `alg=none`, missing),
+  scope (each route allowed and denied), proxy (status and body passthrough,
+  correlation ID created and in downstream logs, `502`/`504`), no secrets or PII in logs.
+
 ## commons
 
 - Event envelope: event ID, correlation ID, type, version, timestamps, source, payload.

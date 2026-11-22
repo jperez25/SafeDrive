@@ -64,6 +64,7 @@ forward svc/scoring          "${SCORING_PORT:-8083}" 8080
 forward svc/policy-rating    "${RATING_PORT:-8084}" 8080
 forward svc/rewards          "${REWARDS_PORT:-8085}" 8080
 forward svc/claims           "${CLAIMS_PORT:-8086}" 8080
+forward svc/gateway          "${GATEWAY_PORT:-8087}" 8080
 forward svc/notification-mock "${NOTIFICATION_MOCK_PORT:-8089}" 8080
 forward svc/grafana          "${GRAFANA_PORT:-3000}" 3000
 forward svc/prometheus       "${PROMETHEUS_PORT:-9090}" 9090

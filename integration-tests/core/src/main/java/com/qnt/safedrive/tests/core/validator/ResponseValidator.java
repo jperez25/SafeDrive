@@ -2,7 +2,9 @@ package com.qnt.safedrive.tests.core.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.qnt.safedrive.tests.core.model.GatewayError;
 import com.qnt.safedrive.tests.core.model.IngestResponse;
+import com.qnt.safedrive.tests.core.model.TokenResponse;
 import com.qnt.safedrive.tests.core.model.PremiumResponse;
 import com.qnt.safedrive.tests.core.model.ClaimsResponse;
 import com.qnt.safedrive.tests.core.model.RewardsResponse;
@@ -89,6 +91,24 @@ public class ResponseValidator {
     @Step("Validate claim body")
     public ClaimBodyValidator claimBody() {
         return new ClaimBodyValidator(parse(ClaimsResponse.Claim.class));
+    }
+
+    /** The gateway token endpoint body. */
+    @Step("Validate token body")
+    public TokenBodyValidator tokenBody() {
+        return new TokenBodyValidator(parse(TokenResponse.class));
+    }
+
+    /** A gateway error answer (401, 403, 404, 405, 413, or the 400 of the token endpoint). */
+    @Step("Validate gateway error body")
+    public GatewayErrorBodyValidator gatewayErrorBody() {
+        return new GatewayErrorBodyValidator(parse(GatewayError.class));
+    }
+
+    /** The gateway public key set. */
+    @Step("Validate public keys body")
+    public JwksBodyValidator jwksBody() {
+        return new JwksBodyValidator(Json.tree(response.asString()));
     }
 
     <B> B parse(Class<B> type) {

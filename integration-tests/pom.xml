@@ -23,6 +23,7 @@
     <module>policy-rating</module>
     <module>rewards</module>
     <module>claims</module>
+    <module>gateway</module>
     <module>e2e</module>
     <module>load</module>
   </modules>

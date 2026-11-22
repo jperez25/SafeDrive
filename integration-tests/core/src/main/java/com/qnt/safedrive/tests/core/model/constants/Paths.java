@@ -26,6 +26,14 @@ public final class Paths {
         return "/v1/claims/" + claimId;
     }
 
+    /** Gateway: token endpoint, public keys and the prefix of every proxied path ({@code /api} + a service path). */
+    public static final String GATEWAY_TOKEN = "/v1/auth/token";
+    public static final String GATEWAY_JWKS = "/.well-known/jwks.json";
+
+    public static String viaGateway(String servicePath) {
+        return "/api" + servicePath;
+    }
+
     public static final String HEALTH = "/actuator/health";
     public static final String HEALTH_LIVENESS = "/actuator/health/liveness";
     public static final String HEALTH_READINESS = "/actuator/health/readiness";
